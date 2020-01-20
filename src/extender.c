@@ -19,12 +19,12 @@ void initExtender(){
 void setExtenderValue(uint8_t* val){
 	EXTENDER_PORT = val;
 }
-
-#endif
-
 void extenderClear(){
 	uint8_t *extenderZeroBuffer = (uint8_t*)calloc(EXTENDER_BYTES, sizeof(uint8_t));
 	setExtenderValue(extenderZeroBuffer);
 	free(extenderZeroBuffer);
 }
+#endif
+
+
 

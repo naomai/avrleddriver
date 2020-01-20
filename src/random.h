@@ -15,7 +15,7 @@ extern "C" {
 	uint8_t random8();
 	uint16_t random16();
 	uint32_t random32();
-	void initRandom();
+	void initRandom() __attribute__((optimize("Os")));
 	uint32_t randomFeedEntropy();
 	void randomFeedEntropyDword(int32_t entropy);
 #ifdef __cplusplus

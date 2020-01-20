@@ -17,25 +17,22 @@
 #pragma GCC optimize("Os")
 
 
-struct xorshift32_state {
-	uint32_t a;
-};
+uint32_t xorshiftState;
 
 uint32_t *ramEntropyPool; 
 uint8_t ramEntropyOffset=0;
 
-uint32_t xorshift32(struct xorshift32_state *state);
+uint32_t xorshift32();
 void rngPrepareAdc();
 void rngSeedFromAdc(char shift, bool shiftWhileWaiting);
 void rngRestoreAdc();
 void entropyFromSRAM();
 
-struct xorshift32_state myState;
 uint8_t prevADMUX, prevADCSRA;
 
 void initRandom() {
-	if(!myState.a){
-		myState.a = 0x63fefa2a;
+	if(!xorshiftState){
+		xorshiftState = 0x63fefa2a;
 	}
 	ramEntropyPool = (uint32_t*)malloc(RANDOM_SRAM_ENTROPY_POOL_SIZE*sizeof(int32_t));
 
@@ -57,17 +54,17 @@ void initRandom() {
 }
 
 uint8_t random8(){
-	return xorshift32(&myState) & 0xFF;
+	return xorshift32() & 0xFF;
 }
 uint16_t random16(){
-	return xorshift32(&myState) & 0xFFFF;
+	return xorshift32() & 0xFFFF;
 }
 uint32_t random32(){
-	return xorshift32(&myState);
+	return xorshift32();
 }
 
 void randomFeedEntropyDword(int32_t entropy){
-	myState.a ^= entropy;
+	xorshiftState ^= entropy;
 }
 
 uint32_t randomFeedEntropy(){
@@ -80,20 +77,20 @@ uint32_t randomFeedEntropy(){
 	#endif
 	
 	//influence entropyFromSRAM() during quick reboots (simulator)
-	ramEntropyPool[ramEntropyOffset]=myState.a;
+	ramEntropyPool[ramEntropyOffset] = xorshiftState;
 	ramEntropyOffset++;
 	if(ramEntropyOffset >= RANDOM_SRAM_ENTROPY_POOL_SIZE)
 		ramEntropyOffset=0;
 
-	return myState.a;
+	return xorshiftState;
 }
 
 void entropyFromSRAM(){
 	for (uint32_t *i = (uint32_t*)0x000; i < (uint32_t*)0x300; i++){
-		 myState.a ^= (*i);
+		 xorshiftState ^= (*i);
 	}
 	for(uint8_t i = 0; i<RANDOM_SRAM_ENTROPY_POOL_SIZE; i++){
-		myState.a ^= ramEntropyPool[i];	
+		xorshiftState ^= ramEntropyPool[i];	
 	}
 }
 
@@ -121,17 +118,17 @@ void rngSeedFromAdc(char shift, bool shiftWhileWaiting){
 		random32();
 	}
 	while(!bit_is_set(ADCSRA, ADIF));
-	myState.a ^= ((uint32_t)ADC) << shift;
+	xorshiftState ^= ((uint32_t)ADC) << shift;
 	#endif
 }
 
 
 /* The state word must be initialized to non-zero */
-uint32_t xorshift32(struct xorshift32_state *state) {
+uint32_t xorshift32() {
 	/* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
-	uint32_t x = state->a;
+	uint32_t x = xorshiftState;
 	x ^= x << 13;
 	x ^= x >> 17;
 	x ^= x << 5;
-	return state->a = x;
+	return xorshiftState = x;
 }

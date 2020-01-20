@@ -63,27 +63,18 @@
 // direct AVR output
 //#define EXTENDER_USE_PORT B
 
-// SN74HC164 
-// 8-bit SR, SPI, ~CLR low pulse before output, cascade with Q_H->AB
-//#define EXTENDER_USE_SN74HC164 
+// shift registers from 7400-series, like SN74HC164 or SN74HC595
+#define EXTENDER_USE_SN7400
 
-// SN74HC595
-// 8-bit SR, SPI, ~RCLK high pulse after output, cascade on Q_H'->SER
-#define EXTENDER_USE_SN74HC595
+#define SN7400_IC 164 // last number from part name
+#define SN7400_CONTROL_PORT		PORTC
+#define SN7400_CONTROL_DDR		DDRC
 
-//SN74HC164 extender config
-//~CLR connection
-
-#define SN74HC164_NCLR_PORT   PORTC
-#define SN74HC164_NCLR_DDR    DDRC
-#define SN74HC164_NCLR_BIT    PC5
-
-
-//SN74HC595 extender config
-//RCLK connection
-#define SN74HC595_RCLK_PORT   PORTC
-#define SN74HC595_RCLK_DDR    DDRC
-#define SN74HC595_RCLK_BIT    PC1
+// use only those needed for your SR (see hardware/SN7400_hardware.h)
+#define SN7400_CLEAR_PIN	    PC5
+#define SN7400_LATCH_PIN	    PC1
+#define SN7400_CS_PIN			PC2
+#define SN7400_OE_PIN			PC3
 
 // byte width of output register 
 #define EXTENDER_BYTES 2

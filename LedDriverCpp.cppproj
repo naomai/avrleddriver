@@ -40,7 +40,7 @@
         </dependencies>
       </framework-data>
     </AsfFrameworkConfig>
-    <avrtool>custom</avrtool>
+    <avrtool>com.atmel.avrdbg.tool.simulator</avrtool>
     <avrtoolserialnumber />
     <avrdeviceexpectedsignature>0x1E950F</avrdeviceexpectedsignature>
     <custom>
@@ -282,16 +282,16 @@
     <Compile Include="src\hardware\RFM73.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\hardware\SN74HC164.c">
+    <Compile Include="src\hardware\RFM73_defs.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\hardware\SN74HC164.h">
+    <Compile Include="src\hardware\SN7400_hardware.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\hardware\SN74HC595.c">
+    <Compile Include="src\hardware\SN7400.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\hardware\SN74HC595.h">
+    <Compile Include="src\hardware\SN7400.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\io\eestream.c">
