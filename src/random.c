@@ -53,7 +53,7 @@ void initRandom() {
 
 	#if !defined(ADC_EXCLUSIVE)
 		rngRestoreAdc();
-	#end
+	#endif
 }
 
 uint8_t random8(){
@@ -73,11 +73,11 @@ void randomFeedEntropyDword(int32_t entropy){
 uint32_t randomFeedEntropy(){
 	#if !defined(ADC_EXCLUSIVE)
 		rngPrepareAdc();
-	#end
+	#endif
 	rngSeedFromAdc(0, true);
 	#if !defined(ADC_EXCLUSIVE)
 		rngRestoreAdc();
-	#end
+	#endif
 	
 	//influence entropyFromSRAM() during quick reboots (simulator)
 	ramEntropyPool[ramEntropyOffset]=myState.a;
