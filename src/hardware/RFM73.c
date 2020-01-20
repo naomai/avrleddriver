@@ -13,6 +13,7 @@
 #include <avr/interrupt.h>
 #include <stdint.h>
 #include "RFM73.h"
+#include "RFM73_defs.h"
 #include "../types.h"
 #include "../debug.h"
 
