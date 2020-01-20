@@ -8,8 +8,7 @@
 #include "EventQueue.h"
 
 EventQueue::EventQueue(){
-	offsetOut = 0;
-	offsetIn = 0;
+	this->clear();
 }
 
 
@@ -28,6 +27,10 @@ void EventQueue::pushEvent(eventDescriptor ev){
 	queue[offsetIn] = ev;
 	offsetIn++;
 	if(offsetIn >= EVENT_QUEUE_SIZE) offsetIn=0;
+}
+
+void EventQueue::clear(){
+	offsetOut = offsetIn = 0;
 }
 
 bool EventQueue::isEmpty(){

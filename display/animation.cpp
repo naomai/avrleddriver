@@ -17,6 +17,9 @@
 #pragma GCC optimize("Os")
 
 void customAnimTriggers(animation *a);
+void animAdvanceFrame(animation *a);
+void animFinished(animation *a);
+void animCheckIntroChain();
 
 const uint8_t PROGMEM scurveLut[256]={
 	0x00,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,
@@ -55,20 +58,31 @@ animation* animCreate(uint8_t stripId, colorRaw from, colorRaw to, uint16_t spee
 			newAnim->speed = speed;
 			newAnim->tag = tag;
 			newAnim->progress = 0;
-			strip->setColor(from, LIGHT_COLOR_DISPLAY);
-			strip->special |= P_SPECIAL_ANIMATED >> 24;
+			strip->setColor(from, LIGHT_COLOR_DISPLAY, COLORSPACE_RAW);
+			if(newAnim->tag==ANIM_INTROCHAIN){
+				strip->special |= P_SPECIAL_ANIMATED;
+			}
 			
 			return newAnim;
 		}
 	}
 	//no free anim spots
 	_log("Unable to create anim - reached limit");
-	strip->setColor(to, LIGHT_COLOR_DISPLAY);
+	strip->setColor(to, LIGHT_COLOR_DISPLAY, COLORSPACE_RAW);
 	return 0;
 }
 
 void animStart(animation *a){
 	if(!a->progress){
+		for(uint8_t i=0; i<count(currentAnims); i++){ // cancel other anims running on this light
+			animation *animToCancel = &currentAnims[i];
+			if(animToCancel != a && animToCancel->stripId == a->stripId && 
+			  (animIsActive(animToCancel) || animToCancel->tag==ANIM_INTROCHAIN)
+			){
+					animCancel(&currentAnims[i]);
+			}
+		}
+		lights->getLightById(a->stripId)->special |= P_SPECIAL_ANIMATED;
 		a->progress=1;
 		//_logf("Started strip %i", a->stripId);
 		eventDescriptor ev;
@@ -80,9 +94,9 @@ void animStart(animation *a){
 }
 
 void animCancel(animation *a){
-	a->progress = 0;
+	a->progress = ~0;
 	a->tag = ANIM_NONE;
-	lights->getLightById(a->stripId)->special &= ~(P_SPECIAL_ANIMATED>>24);
+	lights->getLightById(a->stripId)->special &= ~(P_SPECIAL_ANIMATED);
 }
 
 void animAdvanceAll(){
@@ -91,6 +105,7 @@ void animAdvanceAll(){
 		anim = &currentAnims[i];
 		animAdvanceFrame(anim);
 	}
+	animCheckIntroChain();
 }
 
 void animAdvanceFrame(animation *a){
@@ -117,13 +132,13 @@ void animAdvanceFrame(animation *a){
 		if(animIsLooping(a)){ // another round
 			a->progress = 1;			
 		}else{ // animation is finished
+			strip->setColor(a->to, LIGHT_COLOR_DISPLAY, COLORSPACE_RAW);
+			if(a->tag != ANIM_TEMPFX && a->tag != ANIM_INTROCHAIN){
+				strip->setColor(a->to, LIGHT_COLOR_USER, COLORSPACE_RAW);
+			}
+			strip->special &= ~(P_SPECIAL_ANIMATED);
 			a->progress = ~0;
 			a->tag = ANIM_NONE;
-			strip->setColor(a->to, LIGHT_COLOR_DISPLAY);
-			if(a->tag != ANIM_TEMPFX){
-				strip->setColor(a->to, LIGHT_COLOR_USER);
-			}
-			strip->special &= ~(P_SPECIAL_ANIMATED>>24);
 			animFinished(a);
 		}
 	}
@@ -141,7 +156,7 @@ void animAdvanceFrame(animation *a){
 		blendValue = pgm_read_byte(&scurveLut[newProgress >> 8]);
 		newColor = blendColor(a->from, a->to, blendValue);
 
-		strip->setColor(newColor, LIGHT_COLOR_DISPLAY);
+		strip->setColor(newColor, LIGHT_COLOR_DISPLAY, COLORSPACE_RAW);
 	}
 	customAnimTriggers(a);
 }
@@ -164,11 +179,23 @@ bool animIsLooping(animation *a){
 }
 void customAnimTriggers(animation *a){
 	if(a->tag == ANIM_INTROCHAIN && (a->progress>>8) > 128){
-		uint8_t nextInChain = a->stripId + 1;
-		for(uint8_t i=0; i<count(currentAnims); i++){
-			if(currentAnims[i].stripId==nextInChain && currentAnims[i].tag == ANIM_INTROCHAIN){
+		for(uint8_t i=a->stripId+1; i<count(currentAnims); i++){
+			if(currentAnims[i].tag == ANIM_INTROCHAIN && !animIsActive(&currentAnims[i])){
 				animStart(&currentAnims[i]);
+				break;
 			}
 		}
 	}
+}
+
+void animCheckIntroChain(){
+	for(uint8_t i=0; i<count(currentAnims); i++){
+		if(currentAnims[i].tag == ANIM_INTROCHAIN){
+			if(!animIsActive(&currentAnims[i])) {
+				animStart(&currentAnims[i]);
+			}
+			break;
+		}
+	}
+	
 }

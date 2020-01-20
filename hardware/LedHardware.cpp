@@ -9,6 +9,8 @@
 #include "../display/color.h"
 #include "pwm/pwm.h"
 
+
+
 LedHardware::LedHardware(){
 	lights = new LinkedList();
 	initPwm();
@@ -38,4 +40,5 @@ void LedHardware::tick(){
 		pwmPrepareFinish();
 	}
 }
-	
+
+

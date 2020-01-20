@@ -12,7 +12,7 @@
 
 #include "Module.h"
 
-#define DISPATCHER_MAX_MODULES 5
+#define DISPATCHER_MAX_MODULES 6
 
 typedef struct{
 	uint8_t counter;

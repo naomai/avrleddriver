@@ -47,7 +47,7 @@ void Settings::saverBlinker(){
 	LedLight * l;
 	for(uint8_t i=0; i<STRIPS_COUNT; i++){
 		l = lights->getLightById(i);
-		anim = animCreate(i, colorWhite, l->getColor(LIGHT_COLOR_USER), 8 << 8, ANIM_TEMPFX);
+		anim = animCreate(i, colorWhite, l->getColor(LIGHT_COLOR_USER, COLORSPACE_RAW), 8 << 8, ANIM_TEMPFX);
 		animStart(anim);
 	}
 }

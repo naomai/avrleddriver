@@ -36,10 +36,7 @@ typedef struct {
 animation* animCreate(uint8_t stripId, colorRaw from, colorRaw to, uint16_t speed, animType tag);
 void animStart(animation *a);
 void animCancel(animation *a);
-
 void animAdvanceAll();
-void animAdvanceFrame(animation *a);
-void animFinished(animation *a);
 bool animIsActive(animation *a);
 bool animIsLooping(animation *a);
 

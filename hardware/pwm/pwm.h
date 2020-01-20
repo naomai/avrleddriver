@@ -12,10 +12,17 @@
 #include "../../types.h"
 #include "../LedHardware.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void initPwm();
 void pwmPrepareStart();
 void pwmBufferLight(light_s *s);
 void pwmPrepareFinish() /*__attribute__((optimize("Os")))*/;
 bool pwmIsReady();
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* PWM_H_ */

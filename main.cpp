@@ -4,8 +4,10 @@
 #include "types.h"
 #include <avr/interrupt.h>
 #include <util/delay.h> 
+#include <avr/sleep.h>
 #include <avr/wdt.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "extender.h"
 #include "display/color.h"
@@ -19,6 +21,7 @@
 #include "control/Menu.h"
 #include "SettingsModule.h"
 #include "control/Radio.h"
+#include "PowerMgmt.h"
 
 void updateFrame();
 
@@ -34,8 +37,9 @@ Encoder *enc;
 Menu *menu;
 Settings *settings;
 Radio *rf;
+PowerManagement *pwr;
 
-uint8_t requestFxFrame = 0;
+bool requestFxFrame = false, schedulerAction = false;
 uint16_t frameId = 0;
 uint8_t timer0overflows = 0;
 
@@ -47,6 +51,9 @@ int main(){
 	PORTD=255;
 	initDebugFeatures();
 	
+	initExtender();
+	
+	
 	initRandom();
 	
 	dispatcher = new Dispatcher();
@@ -55,29 +62,38 @@ int main(){
 	dispatcher->registerModule(settings);
 	lights = new LedDriver();
 	dispatcher->registerModule(lights);
-	enc = new Encoder();
-	dispatcher->registerModule(enc);
-	menu = new Menu();
-	dispatcher->registerModule(menu);
+	#ifdef ENCODER_ENABLE
+		enc = new Encoder();
+		dispatcher->registerModule(enc);
+	#endif
+	#ifdef MENU_ENABLE
+		menu = new Menu();
+		dispatcher->registerModule(menu);
+	#endif
 
 	#ifdef RADIO_ENABLE
-	rf = new Radio();
-	dispatcher->registerModule(rf);
-	rf->signIn(DEVICE_SERIAL);
+		rf = new Radio();
+		dispatcher->registerModule(rf);
+		rf->signIn(DEVICE_SERIAL);
 	#endif
+	
+	// must be registered last
+	pwr = new PowerManagement();
+	dispatcher->registerModule(pwr);
 	
 	dispatcher->lateInitAll();
 	
-	initExtender(0xFFFF);
-	setExtenderValue(0x00);
-
-	#if !defined DEBUG_SIMULATOR
-	if(enc->checkEncoderButton()){
-		setExtenderValue(0xAA);
-		_delay_ms(500);
-		setExtenderValue(0x55);
-		_delay_ms(500);
+	#ifdef AUTO_POWERUP
+	{
+		eventDescriptor powerUpEvent;
+		powerUpEvent.type = EVENT_POWERSTATE;
+		powerUpEvent.lbyte = 255;
+		powerUpEvent.hbyte = PS_ON;
+		powerUpEvent.source = 0;
+		dispatcher->queue->pushEvent(powerUpEvent);
 	}
+	#else
+		pwr->requestDeepSleep();
 	#endif
 
 	DDRB |= 1;
@@ -92,23 +108,23 @@ int main(){
 		TIMSK0 |= (1<<TOIE0);
 		TIMSK1 |= (1<<OCIE1A);
 	#endif
-	sei();
 	
-
+	sei();
 
 	while(1){
-		
-		dispatcher->tick();
 		if(requestFxFrame){
 			updateFrame();
-			requestFxFrame=0;
+			requestFxFrame=false;
 			randomFeedEntropy();
 		}
+		dispatcher->tick();
 	}
 }
 
 ISR(TIMER0_OVF_vect){
-	if (++timer0overflows == F_CPU / FPS / 256 / 64) {
+	if ((pwr->state == PS_ON || pwr->state == PS_DEEPSLEEP_REQUESTED)
+		&& ++timer0overflows >= F_CPU / FPS / 256 / 64
+	   ) {
 		timer0overflows = 0;
 		requestFxFrame = 1;
 	}
@@ -128,7 +144,7 @@ void updateFrame(){
 	frameId++;
 	
 	#ifdef DEBUG_FRAMESTROBE
-		PORTC ^= (1<<PC1);
+		//PORTC ^= (1<<PC2);
 	#endif
 }
 

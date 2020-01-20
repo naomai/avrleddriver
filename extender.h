@@ -10,13 +10,16 @@
 
 #include "config.h"
 #include <stdint.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
-	#endif
+#endif
 
 #if defined(EXTENDER_USE_SN74HC164)
 	#include "hardware/SN74HC164.h"
+#elif defined(EXTENDER_USE_SN74HC595)
+	#include "hardware/SN74HC595.h"
 #elif defined(EXTENDER_USE_PORT)
 	#define E_REGNAME2(type,suffix) type ## suffix
 	#define E_REGNAME(type,suffix) E_REGNAME2(type,suffix)
@@ -28,8 +31,9 @@ extern "C" {
 	#endif
 #endif
 
-void setExtenderValue(EXTENDER_VARTYPE val);
-void initExtender(EXTENDER_VARTYPE mask);
+void setExtenderValue(uint8_t* val);
+void initExtender();
+void extenderClear();
 
 #ifdef __cplusplus
 }

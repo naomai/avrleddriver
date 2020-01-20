@@ -15,7 +15,7 @@
 
 void initDebugFeatures(){
 	#ifdef DEBUG_FRAMESTROBE
-		DDRC |= (1<<PC1);
+		DDRC |= (1<<PC2);
 	#endif
 }
 

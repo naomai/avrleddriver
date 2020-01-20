@@ -29,20 +29,14 @@ typedef enum{
 	LIGHT_COLOR_SET, LIGHT_COLOR_USER, LIGHT_COLOR_DISPLAY	
 } lightColorType;
 
-/*typedef struct {
-	uint8_t pins[MAX_CHANNELS_PER_LIGHT]; // pins mapping
-	stripType type; // type of strip (RGB, white, etc)
-	colorHSV userColor; // color selected by user HSV
-	colorHSV tempColor; // currently displayed color HSV
-	colorRaw rawColor; // tempColor translated to raw values (RGB/white)
-	uint8_t special; // flags (animation, random color, etc)
-} strip_s;*/
 
 typedef struct {
 	//dim factor
 	uint8_t dr; 
 	uint8_t dg;
 	uint8_t db;
+	uint8_t dc1;
+	uint8_t dc2;
 	//colors of additional components
 	colorRGB add1;
 	colorRGB add2;
@@ -51,7 +45,7 @@ typedef struct {
 typedef struct {
 	lightType type;
 	uint8_t pins[MAX_CHANNELS_PER_LIGHT];
-	lightCalibration calibration;		
+	uint8_t calibrationIdx;		
 } lightConfig;
 
 

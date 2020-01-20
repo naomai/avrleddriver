@@ -32,8 +32,20 @@ typedef enum{
 
 typedef enum{
 	rfRegisterSet_Temporary = 0,
-	rfRegisterSet_Permanent = 1
+	rfRegisterSet_Permanent = 1,
+	rfRegisterSet_Attribute = 2
 }rfRegisterSet;
+
+typedef enum{
+	rfPowerState_On = 0x00,
+	rfPowerState_Sleep = 0x01,
+	rfPowerState_ShortWake = 0x02
+} rfPowerState;
+
+#define rfRegister_PowerState 0x80
+
+#define rfEvent_PowerState 0x80
+
 
 typedef enum {
 	RFMODE_SLEEP,
@@ -53,6 +65,7 @@ class Radio : public Module{
 	void signIn(uint8_t myId);
 	void frameTick();
 	void event(uint8_t type, uint8_t lbyte, uint8_t hbyte);
+	void tick();
 	
 	protected:
 	rfMode_t rfMode;
@@ -62,12 +75,14 @@ class Radio : public Module{
 	uint16_t ticksSinceLastComm;
 	uint8_t waitFrames;
 	bool responsePrepared;
+	rfPowerState power;
 	
 	void reportState(uint8_t reg);
 	void processCommand(uint8_t * data);
 	void processRequest(uint8_t * data);
 	void processChangeState(uint8_t * data);
 	void respondState(uint8_t reg);
+	void reportEvent(uint8_t radioEventType, uint8_t lbyte=0, uint8_t hbyte=0,bool queued=true);
 	void sendResponse();
 };
 

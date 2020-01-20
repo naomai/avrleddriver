@@ -2,53 +2,59 @@
 # Automatically-generated file. Do not edit or delete the file
 ################################################################################
 
-control\EncoderModule.cpp
+src\control\EncoderModule.cpp
 
-control\Menu.cpp
+src\control\Menu.cpp
 
-control\Radio.cpp
+src\control\Radio.cpp
 
-debug.c
+src\debug.c
 
-display\animation.cpp
+src\display\animation.cpp
 
-display\color.c
+src\display\color.c
 
-display\light\ColorMapper.cpp
+src\display\light\ColorMapper.cpp
 
-display\light\LedLight.cpp
+src\display\light\LedLight.cpp
 
-extender.c
+src\extender.c
 
-hardware\LedHardware.cpp
+src\hardware\LedHardware.cpp
 
-hardware\pwm\pwm.cpp
+src\hardware\pwm\pwm.c
 
-hardware\pwm\pwm_lowlevel.c
+src\hardware\pwm\pwm_lowlevel.c
 
-hardware\RFM73.c
+src\hardware\RFM73.c
 
-hardware\SN74HC164.c
+src\hardware\SN74HC164.c
 
-io\eestream.c
+src\hardware\SN74HC595.c
 
-io\multistream.c
+src\io\eestream.c
 
-LedDriver.cpp
+src\io\i2c.c
 
-modular\Dispatcher.cpp
+src\io\multistream.c
 
-modular\EventQueue.cpp
+src\LedDriver.cpp
 
-modular\Module.cpp
+src\main.cpp
 
-SettingsModule.cpp
+src\modular\Dispatcher.cpp
 
-settings.cpp
+src\modular\EventQueue.cpp
 
-main.cpp
+src\modular\Module.cpp
 
-random.c
+src\PowerMgmt.cpp
 
-types\linkedlist.cpp
+src\random.c
+
+src\settings.cpp
+
+src\SettingsModule.cpp
+
+src\types\linkedlist.cpp
 

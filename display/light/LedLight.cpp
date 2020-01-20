@@ -8,19 +8,32 @@
 #include "../../types.h"
 #include "LedLight.h"
 #include "../../modular/Dispatcher.h"
+#include "../animation.h"
+
 
 extern Dispatcher *dispatcher;
+
+#pragma GCC optimize("Os")
 
 
 LedLight::LedLight(light_s *state) : stateHW(state), type(state->hardwareConfig.type) {
 	this->mapper = ColorMapper::createMapper(&state->hardwareConfig);
+	setPowerState(PS_OFF);
+	this->tempColor = colorBlack;
 }
 
-void LedLight::setColor(colorRaw localColor, lightColorType which){
+void LedLight::setColor(colorRaw color, lightColorType which, colorSpace space){
+	colorRaw localColor;
+	if(space==COLORSPACE_SRGB){
+		localColor = this->mapper->fromRGB(color);
+	}else{
+		localColor = color;
+	}
+	localColor = maskColor(localColor);
+
 	if(which==LIGHT_COLOR_DISPLAY){
 		this->tempColor = localColor;
-		this->stateHW->color = this->mapper->fromRGB(localColor);
-		//this->stateHW->color = localColor;
+		this->stateHW->color = localColor;
 	}else if(which == LIGHT_COLOR_USER || which == LIGHT_COLOR_SET){
 		this->userColor = localColor;
 	}else{
@@ -34,20 +47,39 @@ void LedLight::setColor(colorRaw localColor, lightColorType which){
 	dispatcher->queue->pushEvent(ev);
 }
 
-colorRaw LedLight::getColor(lightColorType which){
+colorRaw LedLight::getColor(lightColorType which, colorSpace space){
+	colorRaw result;
 	if(which==LIGHT_COLOR_DISPLAY){
-		return this->tempColor;
+		result = this->tempColor;
 	}else{
-		return this->userColor;
+		result = this->userColor;
 	}
+	if(space==COLORSPACE_SRGB){
+		result = this->mapper->toRGB(result);
+	}
+	return result;
+}
+
+colorRaw LedLight::maskColor(colorRaw color){
+	if(!(this->type & LIGHT_RED)) color.rgb.r = 0;
+	if(!(this->type & LIGHT_GREEN)) color.rgb.g = 0;
+	if(!(this->type & LIGHT_BLUE)) color.rgb.b = 0;
+	if(!(this->type & LIGHT_WHITE)) color.white.w = 0;
+	if(!(this->type & LIGHT_WHITEWARM)) color.cct.warm = 0;
+	return color;
 }
 
 void LedLight::applySpecialColor(){
-	if(this->special & (P_SPECIAL_RANDOM>>24)){
-		if(this->special & 0xF0){ // P_SPECIAL_DONTRESET
-			this->setColor(HSV2RGB(randomColor()),LIGHT_COLOR_DISPLAY);
-		}else{
-			this->setColor(HSV2RGB(randomColor()),LIGHT_COLOR_USER);
+	if(this->special & P_SPECIAL_POWERDOWN && !(this->special & P_SPECIAL_ANIMATED)){
+		this->setColor(colorBlack,LIGHT_COLOR_DISPLAY, COLORSPACE_RAW);
+	}else{
+		if(this->special & (P_SPECIAL_RANDOM)){
+			colorRaw color = HSV2RGB(randomColor());
+			if(this->special & 0xF0){ // P_SPECIAL_DONTRESET
+				this->setColor(color,LIGHT_COLOR_DISPLAY, COLORSPACE_SRGB);
+			}else{
+				this->setColor(color,LIGHT_COLOR_USER, COLORSPACE_SRGB);
+			}
 		}
 	}
 }
@@ -60,7 +92,23 @@ void LedLight::setSpecialAttribute(uint8_t special){
 void LedLight::resetTempColor(){
 	//this->tempColor = this->userColor;
 	if((this->special & 0xF0)==0){ // P_SPECIAL_DONTRESET
-		this->setColor(this->userColor, LIGHT_COLOR_DISPLAY);
+		this->setColor(this->userColor, LIGHT_COLOR_DISPLAY, COLORSPACE_RAW);
+	}
+}
+
+void LedLight::setPowerState(powerState pwr){
+	if(pwr == PS_OFF){
+		this->special |= P_SPECIAL_POWERDOWN;
+		animation *a = animCreate(myId, getColor(LIGHT_COLOR_DISPLAY, COLORSPACE_RAW),
+			colorBlack,	16 << 8, (animType)ANIM_TEMPFX);
+		animStart(a);
+		
+	}else if(pwr == PS_ON){
+		this->special &= ~P_SPECIAL_POWERDOWN;
+		
+		animCreate(myId, getColor(LIGHT_COLOR_DISPLAY, COLORSPACE_RAW), 
+			getColor(LIGHT_COLOR_USER, COLORSPACE_RAW), 16 << 8, (animType)ANIM_INTROCHAIN);
+		
 	}
 }
 

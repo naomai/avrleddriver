@@ -16,7 +16,7 @@
 const uint32_t colorPresets[] PROGMEM = {
 	0xFFD876, 0xFFEAAA, 0xFFFFEE, 0xFF0000, 0xFF8800, 0xFFBB00, 0xFFDD00, 0xFFFF00,
 	0xCCFF00, 0x99FF00, 0x00FF00, 0x00FFAA, 0x00FFD8, 0x00FFFF, 0x00DDFF,
-	0x0099FF, 0x0000FF, 0x9900FF, 0xDD00FF, 0xFF00DD, 0xFF0066, P_SPECIAL_RANDOM
+	0x0099FF, 0x0000FF, 0x9900FF, 0xDD00FF, 0xFF00DD, 0xFF0066, (uint32_t)P_SPECIAL_RANDOM<<24
 };
 
 const menuType menuFlow[] = {
@@ -42,6 +42,7 @@ Menu::Menu() : Module(){
 	this->currentMenuProps = this->getMenuProperties(this->currentMenu);
 	this->currentLightId = 0;
 	this->currentLight = lights->getLightById(this->currentLightId);
+	this->settingChanged = false;
 	current=255;
 }
 
@@ -59,10 +60,13 @@ void Menu::select(menuType id){
 		
 		// stop LedDriver from resetting userColor
 		if(currentMenu == MENU_NOTHING){
-			currentLight->special &= ~(P_SPECIAL_DONTRESET>>24);
-			currentLight->setColor(HSV2RGB(currentHSV), LIGHT_COLOR_SET);
+			currentLight->special &= ~(P_SPECIAL_DONTRESET);
+			if(settingChanged){
+				currentLight->setColor(HSV2RGB(currentHSV), LIGHT_COLOR_SET);
+				settingChanged = false;
+			}
 		}else{
-			currentLight->special |= (P_SPECIAL_DONTRESET>>24);
+			currentLight->special |= (P_SPECIAL_DONTRESET);
 		}
 		
 		currentLight->applySpecialColor();
@@ -137,11 +141,13 @@ void Menu::setValue(int16_t val){
 			currentHSV = RGB2HSV(HEX2RGB(currentPreset & 0xFFFFFF));
 			currentLight->setColor(HSV2RGB(currentHSV), LIGHT_COLOR_DISPLAY);
 			currentLight->setSpecialAttribute(currentPreset >> 24);
+			settingChanged = true;
 			break;
 		}
 		case MENU_V:
 			currentHSV.v = current;
 			currentLight->setColor(HSV2RGB(currentHSV), LIGHT_COLOR_DISPLAY);
+			settingChanged = true;
 			break;
 		default:
 			currentLight->resetTempColor();
@@ -232,7 +238,7 @@ void Menu::frameEvent(uint16_t frameId){
 		case MENU_S:
 		case MENU_V:
 		
-			//currentLight->special |= (P_SPECIAL_DONTRESET>>24);
+			//currentLight->special |= (P_SPECIAL_DONTRESET);
 
 			// settings blinker (to remind that we're in menu)
 			if((frameId & 63) == 63){

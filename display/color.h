@@ -41,6 +41,14 @@ typedef union{
 	colorRGB rgb;
 } colorRaw;
 
+typedef struct{
+	int16_t b;
+	int16_t g;
+	int16_t r;
+	int16_t cold;
+	int16_t warm;
+}colorRaw16;
+
 typedef struct
 {
     uint8_t h;

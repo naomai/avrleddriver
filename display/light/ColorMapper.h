@@ -16,11 +16,15 @@
 class ColorMapper {
 	protected:
 	lightCalibration calibration;
+	int16_t attenuationInverse; // 255/min(calibR,G,B,W1,W2)
 	public:
 	virtual colorRaw fromRGB(colorRaw rgb);
 	virtual colorRaw toRGB(colorRaw localColor);
+	void applyCalibration(colorRaw *rgb);
+	void setCalibration(uint8_t calIdx);
 	virtual void setCalibration(lightCalibration cal);
 	static ColorMapper* createMapper(lightConfig *cfg);
+	static lightCalibration getCalibrationPreset(uint8_t calIdx);
 };
 
 class ColorMapperRaw: public ColorMapper{
@@ -47,8 +51,6 @@ class ColorMapperCCT: public ColorMapper{
 	colorRaw toRGB(colorRaw localColor);
 	void setCalibration(lightCalibration cal);
 };
-
-
 
 
 #endif /* COLORMAPPER_H_ */

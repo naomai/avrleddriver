@@ -34,7 +34,7 @@ class EventQueue{
 	public:
 	EventQueue();
 	void pushEvent(eventDescriptor ev);
-	
+	void clear();
 	
 };
 

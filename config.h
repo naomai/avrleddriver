@@ -11,46 +11,100 @@
 
 #include <avr/pgmspace.h>
 #include <avr/io.h>
-//#include "types.h"
 #include "mcu.h"
-//#include "display/ledstrips.h"
 
-#define DEVICE_SERIAL 001 // for radio identification
-#define STRIPS_COUNT 4 //number of led strips
+#define DEVICE_SERIAL 99 // for radio identification
+#define STRIPS_COUNT 2 //number of led lights
 
-// for each strip, assign extender channel for R,G,B
-#define RGB_CALIB {.dr=0xFF, .dg=0xFC, .db=0xEB}
-#define STRIPS_CONFIG { \
-	{.type=LIGHT_RGB, .pins={3,4,8}, .calibration=RGB_CALIB}, \
-	{.type=LIGHT_RGB, .pins={2,5,9}, .calibration=RGB_CALIB}, \
-	{.type=LIGHT_RGB, .pins={1,6,10}, .calibration=RGB_CALIB}, \
-	{.type=LIGHT_RGB, .pins={0,7,11}, .calibration=RGB_CALIB} \
-} // (sic) My PCB has G&B reversed*/
 
-/*#define CCT_CALIB {.dr=0xFF,.dg=0xFF,.db=0xFF,.add1={.b=0xFF, .g=0x00, .r=0x00}, .add2={.b=0x00, .g=0x00, .r=0xFF}}
 
-#define STRIPS_CONFIG { \
-	{.type=LIGHT_CCT, .pins={0,0,0,1,2}, .calibration=CCT_CALIB} \
-}// */
+/*      LED hardware config         */
 
-#define EXTENDER_BITS 16
+// color calibration
 
-// output multiplier config
+#define CALIBRATION_TABLE { \
+	{.dr=0xFF, .dg=0xD4, .db=0x91, .dc1=0x36, .dc2=0x00, .add1={.b=0x9E, .g=0xBB, .r=0xFF}}, \
+	{.dr=0x00, .dg=0x00,. db=0x00, .dc1=0xFF, .dc2=0xFF, .add1={.b=0xFF, .g=0xFF, .r=0x00}, .add2={.b=0x00, .g=0xFF, .r=0xFF}} \
+}
+	
+// for each light, assign type, extender channels for R,G,B,WHITE,WARM
+
+// 001cocina
+/*#define LIGHTS_CONFIG { \
+	{.type=LIGHT_RGB, .pins={3,4,8}, .calibrationIdx=0}, \
+	{.type=LIGHT_RGB, .pins={2,5,9}, .calibrationIdx=0}, \
+	{.type=LIGHT_RGB, .pins={1,6,10}, .calibrationIdx=0}, \
+	{.type=LIGHT_RGB, .pins={0,7,11}, .calibrationIdx=0}, \
+} // */
+
+// 002dormi
+// notes
+// W B R G 12
+// G R B 12
+/*#define LIGHTS_CONFIG { \
+	{.type=LIGHT_RGB, .pins={14,13,15}, .calibrationIdx=0}, \
+	{.type=LIGHT_RGBW, .pins={2,3,1,0}, .calibrationIdx=0}, \
+	{.type=LIGHT_RGBW, .pins={6,7,5,4}, .calibrationIdx=0}, \
+	{.type=LIGHT_RGBW, .pins={10,11,9,8}, .calibrationIdx=0}, \
+	{.type=LIGHT_CCT, .pins={0,0,0,16,17}, .calibrationIdx=1}, \
+} //*/
+
+// 099proto
+#define LIGHTS_CONFIG { \
+	{.type=LIGHT_RGB, .pins={0,1,2,0,0}, .calibrationIdx=0}, \
+	{.type=LIGHT_CCT, .pins={0,0,0,3,4}, .calibrationIdx=1}, \
+}
+
+/*       output multiplexer       *
+ *       aka extender             */
+
 // select which output multiplier method (extender) is used
 
 // direct AVR output
 //#define EXTENDER_USE_PORT B
 
-// 8-bit shift register, SPI with additional ~CLR signal
-#define EXTENDER_USE_SN74HC164 
+// SN74HC164 
+// 8-bit SR, SPI, ~CLR low pulse before output, cascade with Q_H->AB
+//#define EXTENDER_USE_SN74HC164 
+
+// SN74HC595
+// 8-bit SR, SPI, ~RCLK high pulse after output, cascade on Q_H'->SER
+#define EXTENDER_USE_SN74HC595
 
 //SN74HC164 extender config
-//used only for ~CLR signal
-#define SN74HC164_CLR_PORT   PORTC
-#define SN74HC164_CLR_DDR    DDRC
-#define SN74HC164_CLR_BIT    PC5
+//~CLR connection
 
-//rotary encoder
+#define SN74HC164_NCLR_PORT   PORTC
+#define SN74HC164_NCLR_DDR    DDRC
+#define SN74HC164_NCLR_BIT    PC5
+
+
+//SN74HC595 extender config
+//RCLK connection
+#define SN74HC595_RCLK_PORT   PORTC
+#define SN74HC595_RCLK_DDR    DDRC
+#define SN74HC595_RCLK_BIT    PC1
+
+// byte width of output register 
+#define EXTENDER_BYTES 2
+
+/*          features            */
+
+// turn on lights after connecting to power
+#define AUTO_POWERUP
+
+// rotary encoder as input method <control/EncoderModule.cpp>
+//#define ENCODER_ENABLE
+
+// color configurator with predefined presets <control/Menu.cpp>
+//#define MENU_ENABLE
+
+// remote control with radio module <control/Radio.cpp>
+#define RADIO_ENABLE
+//#define RADIO_OLD_PINOUT // 001cocina
+
+/*       rotary encoder         */
+
 #define ENCODER_PORT  PORTD
 #define ENCODER_PIN   PIND
 #define ENCODER_DDR   DDRD
@@ -64,21 +118,10 @@
 
 #define EEPROM_CONFIG_LOC 0x00
 
-#define RADIO_ENABLE // enable radio module support (SPI, aimed for RFM73)
-#define RFM73_USE_PORT C
-#define RFM73_PIN_CE 2
-#define RFM73_PIN_CSN 3
-#define RFM73_PIN_IRQ 4
+
+/*            radio              */
 #define RFM73_CHANNEL 80
 #define RFM73_ADDRESS_BASE 0x777000
-
-//#define I2C_ENABLE_REMOTE // enable I2C slave mode, redirect input to readSettingsFromStream()
-
-// SPI sharing
-//#define SPI_MULTIPLE_DEVICES // enable when both SPI extender and radio module are used
-#define SPI_DEVICES_COUNT 2
-#define PWM_THREAD_ID 0
-#define RADIO_THREAD_ID	1
 
 #define FPS 30
 
@@ -86,10 +129,17 @@
 
 #define PWM_STRETCH (PWM_RESOLUTION/256)
 #define PWM_SLOWDOWN 2
-#define PWM_SHORTPULSE 10 // short PWM events are exclusively occupying CPU time (accuracy)
-#define PWM_LONGPULSE 30 // (SPI_MULTIPLE_DEVICES) during longer PWM events SPI semaphore is released
+//#define PWM_LONGPULSE 30 // (old) during longer PWM events SPI semaphore is released
+
+// undefine if you need to use ADC for other purposes
+#define ADC_EXCLUSIVE 
+
 
 /* debug features */
+
+// disable some features for debugging convenience in atmel studio:
+// enhanced RNG, startup delays, input
+//#define DEBUG_SIMULATOR 
 
 // enable logging handler (increases size significantly)
 // see comments in <debug.c>
@@ -98,24 +148,22 @@
 // disable animations
 //#define DEBUG_NOANIM
 
-// disable some features for debugging convenience in atmel studio:
-// enhanced RNG, startup delays, input
-//#define DEBUG_SIMULATOR 
-
-// toggle PC1 with each updateFrame (check for freezes)
-//#define DEBUG_FRAMESTROBE
+// toggle PC2 with each updateFrame (check for freezes)
+#define DEBUG_FRAMESTROBE
 
 // change color to random each frame (PWM stability test)
 //#define DEBUG_RAINBOWTEST 
 
+#define EXTENDER_BITS (EXTENDER_BYTES*8)
 
-
-#if EXTENDER_BITS==8
+/*#if EXTENDER_BITS==8
 typedef uint8_t EXTENDER_VARTYPE;
 #elif EXTENDER_BITS==16
 typedef uint16_t EXTENDER_VARTYPE;
 #elif EXTENDER_BITS==32
 typedef uint32_t EXTENDER_VARTYPE;
-#endif
+#endif*/
+
+//typedef uint8_t* EXTENDER_VARTYPE;
 
 #endif /* CONFIG_H_ */

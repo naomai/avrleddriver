@@ -20,9 +20,10 @@ Encoder::Encoder() : Module(){
 	lastEncoderState0 = 0;
 	lastButState=0;
 	state0changed=false;
-	#if !defined(DEBUG_SIMULATOR)
+	/*#if !defined(DEBUG_SIMULATOR)
 	_delay_ms(25); // stabilize encoder LPFs
-	#endif
+	#endif*/
+	while(checkEncoderButton());
 	checkEncoder();
 }
 	

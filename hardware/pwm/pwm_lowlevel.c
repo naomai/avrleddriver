@@ -25,8 +25,11 @@ PWMBuffer workBuffer; // currently processed in background
 uint8_t PWMTableOffset; // offset in outputBuffer for low-level PWM
 
 
-volatile uint8_t swapPending = 0; // copy workBuffer to outputBuffer after current PWM cycle
-uint8_t swapInProgress = 0; // set at the end of cycle when swapPending=1
+//volatile uint8_t swapPending = 0; // copy workBuffer to outputBuffer after current PWM cycle
+//uint8_t swapInProgress = 0; // set at the end of cycle when swapPending=1
+
+volatile pwmBufferSwapStatus bufferSwapStatus;
+
 uint8_t swapIndex = 0;
 
 PWMPrecalcEvent *currentPrecalcEvent = &outputBuffer.precalcTable[0];
@@ -38,6 +41,7 @@ uint8_t PWMCycles = 0;
 void initPwmLow(){
 	//PWM Timer
 	OCR1A = 10;
+	OCR1B = PWM_RESOLUTION;
 	TCCR1A &= ~(1<<COM1A0 | 1<< COM1A1);
 	TCCR1B &= 0x07;
 	TCCR1B |= 0x02 | (1<<WGM12);
@@ -46,7 +50,7 @@ void initPwmLow(){
 ISR(TIMER1_COMPA_vect)
 {
 	PWMOFFSET_VARTYPE ticks;
-	EXTENDER_VARTYPE extenderBits;
+	//uint8_t extenderBits[EXTENDER_BYTES];
 	OCR1AL=100;
 	TIFR1&=(1<<OCF1A);
 	if(outputBuffer.precalcCount==0){
@@ -56,12 +60,12 @@ ISR(TIMER1_COMPA_vect)
 		return;
 	}
 	
-	if(swapInProgress)
+	if(bufferSwapStatus >= PBSWAP_INITIATED)
 		bufferSwapTableEntry(swapIndex++);
 
 	ticks = currentPrecalcEvent->ticks;
-	extenderBits = currentPrecalcEvent->portMask;
-	setExtenderValue(extenderBits);
+	//extenderBits = currentPrecalcEvent->portMask;
+	setExtenderValue(currentPrecalcEvent->portMask);
 	OCR1A = ticks*PWM_SLOWDOWN;
 	TCNT1=0;
 
@@ -69,9 +73,6 @@ ISR(TIMER1_COMPA_vect)
 	pwmTableNextItem();
 	/*swapPending = 0;
 	ticks = PWM_RESOLUTION;*/
-	
-	
-
 }
 
 void pwmTableNextItem(){
@@ -87,40 +88,36 @@ void pwmTableNextItem(){
 
 
 void maybeSwapBuffers(){
-	if(swapPending){
-		//outputBuffer = workBuffer; // this takes ~900 CPU cycles, causing flicker
-		//swapPending = 0;
-		if(swapInProgress){
-			//bufferSwapRest();
-		}else{
-			swapInProgress = 1;
-			bufferSwapAttribs();
-		}
+	if(bufferSwapStatus == PBSWAP_REQUESTED){
+		bufferSwapStatus = PBSWAP_INITIATED;
+		bufferSwapAttribs();
+		currentPrecalcEvent = &outputBuffer.precalcTable[0];
 	}
 }
 
 void bufferSwapTableEntry(uint8_t index){
 	//outputBuffer.precalcTable[index] = workBuffer.precalcTable[index];
-	outputBuffer.precalcTable[index].portMask = workBuffer.precalcTable[index].portMask;
+	//outputBuffer.precalcTable[index].portMask = workBuffer.precalcTable[index].portMask;
+	memcpy(outputBuffer.precalcTable[index].portMask,workBuffer.precalcTable[index].portMask,EXTENDER_BYTES);
 	outputBuffer.precalcTable[index].ticks = workBuffer.precalcTable[index].ticks;
-	swapInProgress = 2;
+	bufferSwapStatus = PBSWAP_INPROGRESS;
 }
 
 void bufferSwapAttribs(){
-	outputBuffer.extenderMask = workBuffer.extenderMask;
+	//outputBuffer.extenderMask = workBuffer.extenderMask;
 	//outputBuffer.endingMask = workBuffer.endingMask;
+	memcpy(outputBuffer.extenderMask,workBuffer.extenderMask,EXTENDER_BYTES);
 	outputBuffer.precalcCount = workBuffer.precalcCount;
 	//outputBuffer.bigIntervalsEndOffset = workBuffer.bigIntervalsEndOffset;
 	//outputBuffer.smallIntervalsPointer = workBuffer.smallIntervalsPointer;
-	outputBuffer.longestEventTicks = workBuffer.longestEventTicks;
+	//outputBuffer.longestEventTicks = workBuffer.longestEventTicks;
 	lastPrecalcEvent = &outputBuffer.precalcTable[outputBuffer.precalcCount];
 
 }
 
 void bufferSwapFinish(){
-	if(swapInProgress==2){
-		swapPending = 0;
-		swapInProgress = 0;
+	if(bufferSwapStatus==PBSWAP_INPROGRESS){
+		bufferSwapStatus = PBSWAP_IDLE;
 		swapIndex = 0;
 	}
 }

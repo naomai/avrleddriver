@@ -52,6 +52,7 @@ class Menu : public Module{
 	int16_t current;
 	colorHSV currentHSV;
 	bool keyIsDown;
+	bool settingChanged;
 	
 	void setLightBlinking(uint8_t light, bool state);
 	

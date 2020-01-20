@@ -13,6 +13,12 @@
 #include "ColorMapper.h"
 #include "../color.h"
 #include "../../hardware/LedHardware.h"
+#include "../../PowerMgmt.h"
+
+typedef enum {
+	COLORSPACE_SRGB = 0x00,
+	COLORSPACE_RAW = 0x01	
+}colorSpace;
 
 class LedLight{
 	friend class LedDriver;
@@ -22,18 +28,20 @@ class LedLight{
 	colorRaw userColor; // color selected by user
 	colorRaw tempColor; // currently displayed color (changed by menu, animations, etc)
 	uint8_t myId;
-	ColorMapper *mapper;
 	
 	public:
 	uint8_t special; // flags (animation, random color, etc)
 	LedLight(light_s *state);
-
+	ColorMapper *mapper;
 	
-	void setColor(colorRaw localColor, lightColorType which);
-	colorRaw getColor(lightColorType which);
+	
+	void setColor(colorRaw color, lightColorType which, colorSpace space = COLORSPACE_SRGB);
+	colorRaw getColor(lightColorType which, colorSpace space = COLORSPACE_SRGB);
+	colorRaw maskColor(colorRaw color);
 	void applySpecialColor();
 	void setSpecialAttribute(uint8_t special);
 	void resetTempColor();
+	void setPowerState(powerState pwr);
 	
 };
 

@@ -16,16 +16,25 @@
 #include "../types.h"
 #include "../debug.h"
 
-#if defined(RFM73_USE_PORT)
-	#define E_REGNAME2(type,suffix) type ## suffix
-	#define E_REGNAME(type,suffix) E_REGNAME2(type,suffix)
-	#define RFM73_PORT E_REGNAME(PORT, RFM73_USE_PORT)
-	#define RFM73_PIN E_REGNAME(PIN, RFM73_USE_PORT)
-	#define RFM73_DDR E_REGNAME(DDR, RFM73_USE_PORT)
-#endif
-
-
 #define PACKET_LEN 32
+
+#ifdef RADIO_OLD_PINOUT
+	#define PIN_IRQ PC4
+	#define PIN_CE PC2
+	#define PIN_CSN PC3
+	#define SIGNAL_DDR DDRC
+	#define SIGNAL_PORT PORTC
+	#define INPUT_DDR DDRC
+	#define INPUT_PIN PINC
+#else
+	#define PIN_IRQ PC5
+	#define PIN_CE PD3
+	#define PIN_CSN PD2
+	#define SIGNAL_DDR DDRD
+	#define SIGNAL_PORT PORTD
+	#define INPUT_DDR DDRC
+	#define INPUT_PIN PINC
+#endif
 
 const uint8_t PROGMEM REGS1[][4] ={
 	{0x40, 0x4B, 0x01, 0xE2},
@@ -58,37 +67,34 @@ typedef enum{
 	TRX_RECEIVER
 } trxMode;
 
-bool waitingACKPLD = false;
+//bool waitingACKPLD = false;
 
-void RFM73_TransmitStart(uint32_t addr);
-void RFM73_SelectChip(bool state);
-void RFM73_EnableChip(bool state);
-uint8_t RFM73_SwapByte(uint8_t byte);
-uint8_t RFM73_SwitchBank(uint8_t bank);
-void RFM73_PowerUp();
-void RFM73_PowerDown();
+void RFM73_TransmitStart(uint32_t addr) BOOTLOADER_SECTION;
+void RFM73_SelectChip(bool state) BOOTLOADER_SECTION;
+void RFM73_EnableChip(bool state) BOOTLOADER_SECTION;
+uint8_t RFM73_SwapByte(uint8_t byte) __attribute__((noinline)) BOOTLOADER_SECTION;
+uint8_t RFM73_SwitchBank(uint8_t bank) BOOTLOADER_SECTION;
 void RFM73_Reset();
 void RFM73_SetTRXMode(trxMode mode);
 void RFM73_EnableNewFeatures();
-void RFM73_SetDeviceAddress(uint32_t addr);
-uint8_t RFM73_ReadRegisterByte(uint8_t reg);
+uint8_t RFM73_ReadRegisterByte(uint8_t reg) __attribute__((noinline)) BOOTLOADER_SECTION;
 uint8_t RFM73_ReadRegister(uint8_t reg, void* data, size_t length);
-uint8_t RFM73_WriteRegisterByte(uint8_t reg, uint8_t data);
-uint8_t RFM73_WriteRegister(uint8_t reg, void* data, size_t length);
-uint8_t RFM73_RegisterAnd(uint8_t addr, uint8_t mask);
-uint8_t RFM73_RegisterOr(uint8_t addr, uint8_t mask);
-void RFM73_WriteAddressRegs(uint32_t addr);
+uint8_t RFM73_WriteRegisterByte(uint8_t reg, uint8_t data) __attribute__((noinline)) BOOTLOADER_SECTION;
+uint8_t RFM73_WriteRegister(uint8_t reg, void* data, size_t length) __attribute__((noinline)) BOOTLOADER_SECTION;
+uint8_t RFM73_RegisterAnd(uint8_t addr, uint8_t mask) __attribute__((noinline)) BOOTLOADER_SECTION;
+uint8_t RFM73_RegisterOr(uint8_t addr, uint8_t mask) __attribute__((noinline)) BOOTLOADER_SECTION;
+void RFM73_WriteAddressRegs(uint32_t addr) __attribute__((noinline)) BOOTLOADER_SECTION;
 uint8_t RFM73_GetStatus();
 void RFM73_UglyInit();
 
-typedef enum{
+/*typedef enum{
 	RFMSTATE_OFF = 0,
 	RFMSTATE_LISTENING = 1,
 	RFMSTATE_TRANSMITTING = 2,
 	RFMSTATE_STANDBY = 3
 }rmfState;
 
-rmfState radioState;
+rmfState radioState;*/
 
 struct {
 	uint16_t totalTX;
@@ -100,26 +106,28 @@ struct {
 uint32_t myAddress = 0;
 
 void RFM73_Init(){
-	// electrical
-	RFM73_DDR |= (1<<RFM73_PIN_CE) | (1<<RFM73_PIN_CSN);
-	RFM73_DDR &= ~(1<<RFM73_PIN_IRQ);
+	RFM73_InitInterface();
+	if(RFM73_IsRadioPresent()){
+		RFM73_InitChip();
+	}
+}
+
+void RFM73_InitInterface(){
+	SIGNAL_DDR |= (1<<PIN_CSN) | (1<<PIN_CE); // CSN | CE
+	INPUT_DDR &= ~(1<<PIN_IRQ); // IRQ
 	
-	UBRR0 = 0; // DS: To ensure that the XCK line is initialized correctly according to the SPI mode settings, it is important that the UBRR is set to zero at the time the transmitter is enabled. 
+	UBRR0 = 0; // DS: To ensure that the XCK line is initialized correctly according to the SPI mode settings, it is important that the UBRR is set to zero at the time the transmitter is enabled.
 	DDRD |= (1<<PD4); // XCLK
 	UCSR0C = (1<<UMSEL01) | (1<<UMSEL00);
 	UCSR0B = (1<<RXEN0)|(1<<TXEN0);
 	UBRR0 = 2;
-	/*DDRB |= (1<<PB5) | (1<<PB3) | (1<<PB2); // SPI*/
-	
-	//SPCR = ( 1 << SPE ) | ( 1 << MSTR )/* | ( 1 << SPR0 )*/;
-	//spiConfigAdd(RADIO_THREAD_ID, (1 << SPE) | (1 << MSTR));
-	//SPI_WAIT(RADIO_THREAD_ID);
 
-	
 	RFM73_SelectChip(false);
+}
+
+void RFM73_InitChip(){
 	RFM73_SwitchBank(0);
 
-	RFM73_EnableChip(false);
 	RFM73_PowerDown();
 	
 	//RFM73_UglyInit();
@@ -136,7 +144,7 @@ void RFM73_Init(){
 	RFM73_WriteRegisterByte(EN_AA, (1<<ENAA_P0));
 	//retransmission
 	
-	RFM73_WriteRegisterByte(SETUP_RETR, 0x44); // 1ms, 4 retransmissions
+	RFM73_WriteRegisterByte(SETUP_RETR, 0x34); // 750ms, 4 retransmissions
 	//from datasheet of nRF24L01+:
 	//"In 250kbps mode (even when the payload is not in ACK) the ARD must be 500uS or more."
 	
@@ -154,17 +162,18 @@ void RFM73_Init(){
 	
 	RFM73_FlushTX();
 	RFM73_FlushRX();
-	//SPI_WAIT_END();
+
 }
 
 
-void RFM73_ListenStart(uint32_t addr){
-	radioState = RFMSTATE_LISTENING;
-	RFM73_EnableChip(false);
+
+void RFM73_ListenStart(){
+	//radioState = RFMSTATE_LISTENING;
+	//RFM73_EnableChip(false);
 	//RFM73_PowerDown();
 	RFM73_FlushTX();
-	RFM73_FlushRX();
-	RFM73_SetDeviceAddress(addr);
+	//RFM73_FlushRX();
+	RFM73_WriteAddressRegs(myAddress);
 	RFM73_SetTRXMode(TRX_RECEIVER);
 	RFM73_PowerUp();
 		
@@ -172,14 +181,12 @@ void RFM73_ListenStart(uint32_t addr){
 }
 
 void RFM73_ListenStop(){
-	RFM73_EnableChip(false);
 	RFM73_PowerDown();
 	RFM73_SetTRXMode(TRX_TRANSMITTER);
 }
 
 void RFM73_TransmitStart(uint32_t addr){
-	radioState = RFMSTATE_STANDBY;
-	RFM73_EnableChip(false);
+	//radioState = RFMSTATE_STANDBY;
 	RFM73_PowerDown();
 	RFM73_FlushTX();
 	RFM73_FlushRX();
@@ -202,17 +209,18 @@ void RFM73_PowerUp(){
 		_delay_ms(2);
 	}
 	
-	radioState = RFMSTATE_STANDBY;
+	//radioState = RFMSTATE_STANDBY;
 }
 
 void RFM73_PowerDown(){
+	RFM73_EnableChip(false);
 	RFM73_RegisterAnd(EN_RXADDR, ~(1<<ERX_P0));
 	RFM73_RegisterAnd(NRF_CONFIG, ~(1<<PWR_UP));
-	radioState = RFMSTATE_OFF;
+	//radioState = RFMSTATE_OFF;
 }
 
 void RFM73_Reset(){
-	RFM73_Init();
+	RFM73_InitChip();
 	RFM73_PowerUp();
 }
 
@@ -223,18 +231,18 @@ void RFM73_SetDeviceAddress(uint32_t addr){
 
 void RFM73_SetChannel(uint8_t channel){
 	uint8_t chanMasked = channel & 0x7F;
-	RFM73_SwitchBank(0);
+	//RFM73_SwitchBank(0);
 	RFM73_WriteRegister(RF_CH, &chanMasked, 1);
 }
 
 void RFM73_WriteAddressRegs(uint32_t addr){
-	RFM73_SwitchBank(0);
+	//RFM73_SwitchBank(0);
 	RFM73_WriteRegister(RX_ADDR_P0, &addr, 4);
 	RFM73_WriteRegister(TX_ADDR, &addr, 4);
 }
 
 void RFM73_SetTRXMode(trxMode mode){
-	RFM73_SwitchBank(0);
+	//RFM73_SwitchBank(0);
 	uint8_t conf = RFM73_ReadRegisterByte(NRF_CONFIG);
 	if (mode == TRX_RECEIVER) {
 		conf |= (1<<PRIM_RX);
@@ -265,12 +273,13 @@ bool RFM73_Transmit(uint32_t addr, uint8_t *data, uint8_t length){
 	do{
 		_delay_us(100);
 		wait++;
-	}while((RFM73_PIN & (1<<RFM73_PIN_IRQ)) && wait < 53);
+	}while((INPUT_PIN & (1<<PIN_IRQ)) && wait < 53);
 	
-	radioStats.totalTX++;
+	//radioStats.totalTX++;
 	
 	uint8_t status = RFM73_GetStatus();
 	bool success = false;
+
 	if(status & (1<<TX_DS)){
 		RFM73_WriteRegisterByte(NRF_STATUS,(1<<TX_DS));
 		success = true;	
@@ -278,14 +287,15 @@ bool RFM73_Transmit(uint32_t addr, uint8_t *data, uint8_t length){
 	}else if(status & (1<<MAX_RT)){
 		RFM73_FlushTX();
 		RFM73_WriteRegisterByte(NRF_STATUS,(1<<MAX_RT));
-		radioStats.totalPL++;
+		//radioStats.totalPL++;
 		_log("Timeout");
 	}else{
 		//chip timeout todo
 		RFM73_PowerDown();
 		RFM73_ListenStop();
 		_log("RadioFail");
-		radioStats.totalPL++;
+		//radioStats.totalPL++;
+		
 	}
 	
 	/*if(RFM73_IsDataAvailable()){
@@ -299,30 +309,25 @@ bool RFM73_Transmit(uint32_t addr, uint8_t *data, uint8_t length){
 	
 	//PORTB ^= (1<<PB1);
 	RFM73_WriteRegisterByte(NRF_STATUS, 0x70);
-	RFM73_FlushTX();
+	//RFM73_FlushTX();
 	
-	RFM73_ListenStart(myAddress);
+	RFM73_ListenStart();
 	return success;
 }
 
-void RFM73_WriteAckPayload(uint8_t *data, uint8_t length){
+/*void RFM73_WriteAckPayload(uint8_t *data, uint8_t length){
 	RFM73_FlushTX();
-	//RFM73_ListenStop();
 	RFM73_SelectChip(true);
 	RFM73_SwapByte(W_ACK_PAYLOAD);
-	/*for(uint8_t i=0; i<PACKET_LEN; i++){
-		RFM73_SwapByte(i<length ? data[i] : 0x00);
-	}*/
+
 	for(uint8_t i=0; i<length; i++){
 		RFM73_SwapByte(data[i]);
 	}
-	
-	
+		
 	RFM73_SelectChip(false);
 	
 	waitingACKPLD = true;
-	//RFM73_ListenStart(myAddress);
-}
+}*/
 
 uint8_t RFM73_ReadData(uint8_t *buffer){
 	RFM73_SelectChip(true);
@@ -337,32 +342,29 @@ uint8_t RFM73_ReadData(uint8_t *buffer){
 		buffer[i] = RFM73_SwapByte(0xFF);
 	}	
 	RFM73_SelectChip(false);
-	_delay_us(50);
-	RFM73_FlushTX();
-	RFM73_FlushRX();
+	//_delay_us(50);
+	//RFM73_FlushTX();
+	//RFM73_FlushRX();
 	return length;
 }
 
 void RFM73_SelectChip(bool state){
 	if(state){
-		
-		RFM73_PORT &= ~(1<<RFM73_PIN_CSN);
-
+		SIGNAL_PORT &= ~(1<<PIN_CSN);
 	}else{
-		RFM73_PORT |= (1<<RFM73_PIN_CSN);
-		
+		SIGNAL_PORT |= (1<<PIN_CSN);
 	}
 }
 void RFM73_EnableChip(bool state){
 	if(!state){
-		RFM73_PORT &= ~(1<<RFM73_PIN_CE);
+		SIGNAL_PORT &= ~(1<<PIN_CE);
 	}else{
-		RFM73_PORT |= (1<<RFM73_PIN_CE);
+		SIGNAL_PORT |= (1<<PIN_CE);
 	}
 }
 
 void RFM73_EnableNewFeatures(){
-	RFM73_SwitchBank(0);
+	//RFM73_SwitchBank(0);
 	RFM73_WriteRegisterByte(FEATURE, (1<<EN_DPL));
 	uint8_t feat = RFM73_ReadRegisterByte(FEATURE);
 	if(!feat) {
@@ -372,6 +374,27 @@ void RFM73_EnableNewFeatures(){
 		RFM73_SelectChip(false);
 	}
 	RFM73_WriteRegisterByte(FEATURE, 0);
+}
+
+bool RFM73_IsRadioPresent(){
+	uint8_t status, bankStart;
+	bool radioPresent = false;
+
+	RFM73_SelectChip(true);
+	status = RFM73_SwapByte(ACTIVATE);
+	bankStart = (status >> 7);
+	RFM73_SwapByte(0x53);
+	RFM73_SelectChip(false);
+	
+	status = RFM73_GetStatus();
+	radioPresent = (status >> 7) != bankStart;
+	
+	if(radioPresent){
+		RFM73_SwitchBank(0);
+
+	}
+	
+	return radioPresent;
 }
 
 uint8_t RFM73_SwapByte(uint8_t byte){
@@ -488,7 +511,7 @@ void RFM73_UglyInit(){
 
 uint8_t RFM73_FlushTX(){
 	uint8_t status;
-	RFM73_SwitchBank(0);
+	//RFM73_SwitchBank(0);
 	//RFM73_RegisterAnd(NRF_CONFIG, 0xFE);
 	RFM73_SelectChip(true);
 	status=RFM73_SwapByte(FLUSH_TX);
@@ -500,7 +523,7 @@ uint8_t RFM73_FlushTX(){
 
 uint8_t RFM73_FlushRX(){
 	uint8_t status;
-	RFM73_SwitchBank(0);
+	//RFM73_SwitchBank(0);
 	RFM73_SelectChip(true);
 	status=RFM73_SwapByte(FLUSH_RX);
 	RFM73_SelectChip(false);
@@ -509,10 +532,12 @@ uint8_t RFM73_FlushRX(){
 }
 
 bool RFM73_IsDataAvailable(){
-	uint8_t fifo = RFM73_ReadRegisterByte(FIFO_STATUS);
-	if(!(fifo & (1<<RX_EMPTY))){
-		RFM73_RegisterOr(NRF_STATUS, (1<<RX_DR));
-		return true;
+	if(!(INPUT_PIN & (1<<PIN_IRQ))){
+		uint8_t fifo = RFM73_ReadRegisterByte(FIFO_STATUS);
+		if(!(fifo & (1<<RX_EMPTY))){
+			RFM73_RegisterOr(NRF_STATUS, (1<<RX_DR));
+			return true;
+		}
 	}
 	return false;
 }

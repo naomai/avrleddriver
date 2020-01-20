@@ -15,9 +15,9 @@ Module::Module(){
 	lateInitDone = false;
 }
 
-void Module::raiseEvent(uint8_t type, uint8_t lbyte, uint8_t hbyte){
+void Module::raiseEvent(uint8_t type, uint8_t lbyte, uint8_t hbyte, bool loopback){
 	eventDescriptor ev;
-	ev.source = this->moduleId;
+	ev.source = !loopback ? this->moduleId : 0;
 	ev.type = type;
 	ev.lbyte = lbyte;
 	ev.hbyte = hbyte;

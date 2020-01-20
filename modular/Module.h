@@ -15,6 +15,7 @@
 // builtin
 #define EVENT_FRAME 0x01
 #define EVENT_COLOR_CHANGE 0x02
+#define EVENT_POWERSTATE 0x03
 
 #include "EventQueue.h"
 
@@ -28,7 +29,7 @@ class Module{
 	
 	protected:
 	uint8_t tickPrescaler;
-	void raiseEvent(uint8_t type, uint8_t lbyte, uint8_t hbyte);
+	void raiseEvent(uint8_t type, uint8_t lbyte, uint8_t hbyte, bool loopback = false);
 	
 	public: 
 	Module();

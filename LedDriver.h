@@ -20,6 +20,7 @@ class LedDriver : public Module{
 	protected:
 	LedLight *lights[STRIPS_COUNT];
 	LedHardware *ledHal;
+	bool powerDown;
 	
 	public:
 	LedDriver();
@@ -28,7 +29,7 @@ class LedDriver : public Module{
 	void event(uint8_t type, uint8_t lbyte, uint8_t hbyte);
 	void lateInit();
 	LedLight* getLightById(uint8_t lightId);
-	void fadeInSequence();
+	void setPowerStateForAll(powerState pwr);
 };
 
 #endif /* LEDDRIVER_H_ */

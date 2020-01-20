@@ -63,7 +63,7 @@ uint8_t readSettingsFromStream(streamWrapper *stream) {
 				sread(&newColorH,sizeof(newColorH),1,stream);
 				if(stripId>=STRIPS_COUNT) break;
 				s=lights->getLightById(stripId);
-				s->setColor(HSV2RGB(newColorH), LIGHT_COLOR_USER);
+				s->setColor(HSV2RGB(newColorH), LIGHT_COLOR_USER, COLORSPACE_SRGB);
 				s->special &= 0xF0;
 				break;
 			case ec_RGB:
@@ -71,14 +71,14 @@ uint8_t readSettingsFromStream(streamWrapper *stream) {
 				sread(&newColorR,sizeof(newColorR),1,stream);
 				if(stripId>=STRIPS_COUNT) break;
 				s=lights->getLightById(stripId);
-				s->setColor(newColorR, LIGHT_COLOR_USER);
+				s->setColor(newColorR, LIGHT_COLOR_USER, COLORSPACE_RAW);
 				s->special &= 0xF0;
 				break;
 			case ec_Special:
 				stripId = sgetc(stream);
 				if(stripId>=STRIPS_COUNT) break;
 				s=lights->getLightById(stripId);
-				s->special = sgetc(stream);
+				s->special = sgetc(stream) & 0x0F;
 				s->applySpecialColor();
 				
 				break;	
@@ -143,12 +143,12 @@ void writeSettingsToStream(streamWrapper *stream){
 		if(strip->special & 0x1F){ // special color
 			sputc(ec_Special, stream);
 			sputc(i, stream);
-			sputc(strip->special, stream);
+			sputc(strip->special & 0x1F, stream);
 			_logf("writeSpecial: %i %i", i, strip->special);
 		}else{ // regular rgb
 			sputc(ec_RGB, stream);
 			sputc(i, stream);
-			colorRaw rgb = strip->getColor(LIGHT_COLOR_SET);
+			colorRaw rgb = strip->getColor(LIGHT_COLOR_SET, COLORSPACE_RAW);
 			swrite(&rgb, sizeof(colorRaw), 1, stream);
 			_logf("writeRgb: %i", i);
 		}
