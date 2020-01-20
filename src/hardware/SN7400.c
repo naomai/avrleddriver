@@ -39,7 +39,7 @@ void SN7400_Set(uint8_t* val) {
 	SR_OUTPUT_DISABLE();
 	SN7400_Clear();
 	#if EXTENDER_BYTES==1
-		SPDR = val & 0xFF;
+		SPDR = val[0] & 0xFF;
 		while(! bit_is_set( SPSR, SPIF ) );
 	#else
 		uint8_t *ptr = &val[EXTENDER_BYTES-1];
