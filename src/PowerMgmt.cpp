@@ -49,11 +49,13 @@ void PowerManagement::wakeup(bool immediately){
 void PowerManagement::shortWakeStart(){
 	state = PS_DEEPSLEEP_SHORTWAKE;
 	this->raiseEvent(EVENT_DEEP_SLEEP_SHORTWAKE, 0, 0, false);
+	set_sleep_mode(SLEEP_MODE_IDLE);
 	//PORTC |= (1<<PC3);
 }
 
 void PowerManagement::shortWakeEnd(){
 	this->raiseEvent(EVENT_DEEP_SLEEP_ENTER, 0, 0, true);
+	set_sleep_mode(SLEEP_MODE_IDLE);
 	//PORTC &= ~(1<<PC3);
 }
 

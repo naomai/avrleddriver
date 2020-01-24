@@ -13,6 +13,8 @@
 #include "../config.h"
 #include "../types.h"
 
+extern PowerManagement *pwr;
+
 const uint32_t colorPresets[] PROGMEM = {
 	0xFFD876, 0xFFEAAA, 0xFFFFEE, 0xFF0000, 0xFF8800, 0xFFBB00, 0xFFDD00, 0xFFFF00,
 	0xCCFF00, 0x99FF00, 0x00FF00, 0x00FFAA, 0x00FFD8, 0x00FFFF, 0x00DDFF,
@@ -204,6 +206,7 @@ void Menu::setLightBlinking(uint8_t light, bool state){
 }
 
 void Menu::event(uint8_t type, uint8_t lbyte, uint8_t hbyte){
+	if(pwr->state != PS_ON) return;
 	switch(type){
 		case EVENT_INPUT_KEY:
 			if(hbyte==KEY_ENTER){
