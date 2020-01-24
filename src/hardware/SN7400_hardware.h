@@ -24,12 +24,12 @@
 	PIN_SET_LOW(pin);
 
 #define PIN_CONFIG_LOW(pin) \
-	PIN_SET_HIGH(pin); \
-	SN7400_CONTROL_PORT |= (1<<pin);
+	SN7400_CONTROL_DDR |= (1<<pin); \
+	PIN_SET_HIGH(pin); 
 
 #define PIN_CONFIG_HIGH(pin) \
-	PIN_SET_HIGH(pin); \
-	SN7400_CONTROL_PORT &= ~(1<<pin);
+	SN7400_CONTROL_DDR |= (1<<pin); \
+	PIN_SET_LOW(pin);
 
 
 // shift registers definitions

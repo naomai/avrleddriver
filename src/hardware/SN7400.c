@@ -43,15 +43,13 @@ void SN7400_Set(uint8_t* val) {
 		while(! bit_is_set( SPSR, SPIF ) );
 	#else
 		uint8_t *ptr = &val[EXTENDER_BYTES-1];
-		while(1){
+		do{
 			SPDR = *ptr;
-			if(ptr == val)
-				break;
 			ptr--;
 			while( ! bit_is_set( SPSR, SPIF ) );
-		}
+		}while(ptr >= val);
 	#endif
-	while( ! bit_is_set( SPSR, SPIF ) );
+
 	
 	SR_LATCH();
 	SR_OUTPUT_ENABLE();
