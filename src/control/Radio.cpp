@@ -27,7 +27,7 @@ Radio::Radio() : Module(){
 	rfMode = RFMODE_SLEEP;
 	myDeviceId = 1;
 	responseLength = 0;
-	waitFrames = FPS / 2;
+	waitFrames = FPS;
 	ticksSinceLastComm = 0;
 	responsePrepared = false;
 	power = rfPowerState_On;	
@@ -57,7 +57,8 @@ void Radio::frameTick(){
 				_log("Notice me sempai");
 				responseBuffer[0] = rf_Register;
 				responseBuffer[1] = myDeviceId;
-				if(RFM73_Transmit(ADDR_MASTER, responseBuffer, 2)){
+				responseBuffer[2] = power;
+				if(RFM73_Transmit(ADDR_MASTER, responseBuffer, 3)){
 					//_log("Greeting sent");
 					rfMode = RFMODE_REGISTERED;
 					waitFrames = 2;
@@ -84,7 +85,7 @@ void Radio::frameTick(){
 			RFM73_Transmit(ADDR_MASTER, responseBuffer, responseLength);
 			rfMode = RFMODE_REGISTERED;
 			responsePrepared = false;
-			waitFrames = 3;
+			waitFrames = 2;
 			break;
 		case RFMODE_SLEEP:
 			break;
@@ -100,7 +101,7 @@ void Radio::frameTick(){
 }
 
 void Radio::event(uint8_t type, uint8_t lbyte, uint8_t hbyte){
-	if(type==EVENT_FRAME && power == rfPowerState_On){
+	if(type==EVENT_FRAME){
 		frameTick();
 	}else if(type==EVENT_COLOR_CHANGE && hbyte == LIGHT_COLOR_SET){
 		reportState(lbyte);
@@ -125,9 +126,9 @@ void Radio::event(uint8_t type, uint8_t lbyte, uint8_t hbyte){
 }
 
 void Radio::tick(){
-	 if(power != rfPowerState_On){
+	 /*if(power != rfPowerState_On){
 		 frameTick();
-	 }
+	 }*/
 }
 
 
@@ -185,7 +186,7 @@ void Radio::processChangeState(uint8_t * data){
 		LedLight* strip = lights->getLightById(reg);
 		setMode = (rfRegisterSet)(data[3] & 0x0F);
 		if(setMode == rfRegisterSet_Attribute){
-			uint8_t special;
+			uint8_t special=data[2];
 			strip->setSpecialAttribute(special);
 		}else{
 			uint8_t speed;
@@ -229,7 +230,7 @@ void Radio::reportEvent(uint8_t radioEventType, uint8_t lbyte, uint8_t hbyte, bo
 		responseLength = 5;
 		if(queued){
 			rfMode=RFMODE_READY_TO_RESPOND;
-			waitFrames = 0;
+			waitFrames = 1;
 			responsePrepared = true;
 		}else{
 			RFM73_Transmit(ADDR_MASTER, responseBuffer, responseLength);
@@ -270,7 +271,7 @@ void Radio::respondState(uint8_t reg){
 void Radio::sendResponse(){
 	if(rfMode == RFMODE_MASTER_WAITING){
 		rfMode=RFMODE_READY_TO_RESPOND;
-		waitFrames = 2;
+		waitFrames = 1;
 	}
 	responsePrepared = true;
 	// ACK+PLD is broken (why?)
