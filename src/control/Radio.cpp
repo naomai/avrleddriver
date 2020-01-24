@@ -201,11 +201,10 @@ void Radio::processChangeState(uint8_t * data){
 				newColor = strip->mapper->fromRGB(newColor);
 			}
 			
-			
-			anim = animCreate(reg, strip->getColor(LIGHT_COLOR_DISPLAY), newColor, speed << 8, ANIM_REMOTE);
+			anim = animCreate(reg, strip->getColor(LIGHT_COLOR_DISPLAY, COLORSPACE_RAW), newColor, speed << 8, ANIM_REMOTE);
 			animStart(anim);
 			if(setMode == rfRegisterSet_Permanent){
-				strip->setColor(newColor, LIGHT_COLOR_SET, COLORSPACE_RAW);
+				strip->setColor(newColor, LIGHT_COLOR_SET, cs);
 			}
 		}
 	}else if(reg==rfRegister_PowerState){
@@ -265,6 +264,7 @@ void Radio::respondState(uint8_t reg){
 	}else if(reg == rfRegister_PowerState){
 		responseBuffer[3] = (uint8_t)power;
 		responseLength=4;
+		sendResponse();
 	}
 }
 

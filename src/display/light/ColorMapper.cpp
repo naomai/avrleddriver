@@ -111,6 +111,8 @@ colorRaw ColorMapperMono::toRGB(colorRaw localColor){
 	calcColor.r = (uint16_t)localColor.rgb.r + ((this->filterMono.rgb.r * (uint16_t)localColor.white.w)>>8);
 	calcColor.g = (uint16_t)localColor.rgb.g + ((this->filterMono.rgb.g * (uint16_t)localColor.white.w)>>8);
 	calcColor.b = (uint16_t)localColor.rgb.b + ((this->filterMono.rgb.b * (uint16_t)localColor.white.w)>>8);
+	calcColor.cold = 0;
+	calcColor.warm = 0;	
 	result = colorNormalize(calcColor);
 	
 	return result;

@@ -180,16 +180,18 @@ bool animIsLooping(animation *a){
 }
 void customAnimTriggers(animation *a){
 	if(a->tag == ANIM_INTROCHAIN && (a->progress>>8) > 128){
-		for(uint8_t i=a->stripId+1; i<count(currentAnims); i++){
-			if(currentAnims[i].tag == ANIM_INTROCHAIN && !animIsActive(&currentAnims[i])){
-				animStart(&currentAnims[i]);
+		for(uint8_t i=0; i<count(currentAnims); i++){
+			if(&currentAnims[i] != a && currentAnims[i].tag == ANIM_INTROCHAIN){
+				if(!animIsActive(&currentAnims[i])){
+					animStart(&currentAnims[i]);
+				}
 				break;
 			}
 		}
 	}
 }
 
-void animCheckIntroChain(){
+void animCheckIntroChain(){ // autostart first inactive anim in introchain
 	for(uint8_t i=0; i<count(currentAnims); i++){
 		if(currentAnims[i].tag == ANIM_INTROCHAIN){
 			if(!animIsActive(&currentAnims[i])) {
