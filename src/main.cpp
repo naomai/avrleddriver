@@ -122,8 +122,8 @@ int main(){
 }
 
 ISR(TIMER0_OVF_vect){
-	if ((pwr->state == PS_ON || pwr->state == PS_DEEPSLEEP_REQUESTED)
-		&& ++timer0overflows >= F_CPU / FPS / 256 / 64
+	if (/*(pwr->state == PS_ON || pwr->state == PS_DEEPSLEEP_REQUESTED)
+		&&*/ ++timer0overflows >= F_CPU / FPS / 256 / 64
 	   ) {
 		timer0overflows = 0;
 		requestFxFrame = 1;

@@ -18,7 +18,8 @@ extern Dispatcher *dispatcher;
 
 LedLight::LedLight(light_s *state) : stateHW(state), type(state->hardwareConfig.type) {
 	this->mapper = ColorMapper::createMapper(&state->hardwareConfig);
-	setPowerState(PS_OFF);
+	//setPowerState(PS_OFF);
+	this->special |= P_SPECIAL_POWERDOWN;
 	this->tempColor = colorBlack;
 }
 
@@ -70,17 +71,16 @@ colorRaw LedLight::maskColor(colorRaw color){
 }
 
 void LedLight::applySpecialColor(){
+	if(this->special & (P_SPECIAL_RANDOM)){
+		colorRaw color = HSV2RGB(randomColor());
+		if(this->special & P_SPECIAL_DONTRESET){
+			this->setColor(color,LIGHT_COLOR_DISPLAY, COLORSPACE_SRGB);
+		}else{
+			this->setColor(color,LIGHT_COLOR_USER, COLORSPACE_SRGB);
+		}
+	}
 	if(this->special & P_SPECIAL_POWERDOWN && !(this->special & P_SPECIAL_ANIMATED)){
 		this->setColor(colorBlack,LIGHT_COLOR_DISPLAY, COLORSPACE_RAW);
-	}else{
-		if(this->special & (P_SPECIAL_RANDOM)){
-			colorRaw color = HSV2RGB(randomColor());
-			if(this->special & 0xF0){ // P_SPECIAL_DONTRESET
-				this->setColor(color,LIGHT_COLOR_DISPLAY, COLORSPACE_SRGB);
-			}else{
-				this->setColor(color,LIGHT_COLOR_USER, COLORSPACE_SRGB);
-			}
-		}
 	}
 }
 void LedLight::setSpecialAttribute(uint8_t special){

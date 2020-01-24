@@ -100,12 +100,13 @@ void animCancel(animation *a){
 }
 
 void animAdvanceAll(){
+	animCheckIntroChain();
+	
 	animation *anim;
 	for(uint8_t i=0; i<count(currentAnims); i++){
 		anim = &currentAnims[i];
 		animAdvanceFrame(anim);
 	}
-	animCheckIntroChain();
 }
 
 void animAdvanceFrame(animation *a){
