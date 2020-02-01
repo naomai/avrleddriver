@@ -33,7 +33,8 @@ typedef enum{
 typedef enum{
 	rfRegisterSet_Temporary = 0,
 	rfRegisterSet_Permanent = 1,
-	rfRegisterSet_Attribute = 2
+	rfRegisterSet_Attribute = 2,
+	rfRegisterSet_Reset = 3
 }rfRegisterSet;
 
 typedef enum{
@@ -73,6 +74,7 @@ class Radio : public Module{
 	uint8_t responseBuffer[PACKET_LEN];
 	uint8_t responseLength;
 	uint16_t ticksSinceLastComm;
+	uint8_t wakesSinceLastComm;
 	uint8_t waitFrames;
 	bool responsePrepared;
 	rfPowerState power;

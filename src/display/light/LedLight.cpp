@@ -35,8 +35,10 @@ void LedLight::setColor(colorRaw color, lightColorType which, colorSpace space){
 	if(which==LIGHT_COLOR_DISPLAY){
 		this->tempColor = localColor;
 		this->stateHW->color = localColor;
-	}else if(which == LIGHT_COLOR_USER || which == LIGHT_COLOR_SET){
+	}else if(which == LIGHT_COLOR_USER){
 		this->userColor = localColor;
+	}else if(which == LIGHT_COLOR_SET){
+		this->memColor = this->userColor = localColor;
 	}else{
 		return;
 	}
@@ -52,8 +54,10 @@ colorRaw LedLight::getColor(lightColorType which, colorSpace space){
 	colorRaw result;
 	if(which==LIGHT_COLOR_DISPLAY){
 		result = this->tempColor;
-	}else{
+	}else if(which==LIGHT_COLOR_USER){
 		result = this->userColor;
+	}else{
+		result = this->memColor;
 	}
 	if(space==COLORSPACE_SRGB){
 		result = this->mapper->toRGB(result);

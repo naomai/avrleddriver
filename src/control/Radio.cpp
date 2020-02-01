@@ -29,6 +29,7 @@ Radio::Radio() : Module(){
 	responseLength = 0;
 	waitFrames = FPS;
 	ticksSinceLastComm = 0;
+	wakesSinceLastComm = 0;
 	responsePrepared = false;
 	power = rfPowerState_On;	
 	RFM73_Init();
@@ -63,6 +64,7 @@ void Radio::frameTick(){
 					rfMode = RFMODE_REGISTERED;
 					waitFrames = 2;
 					ticksSinceLastComm = 0;
+					wakesSinceLastComm = 0;
 				}else{
 					waitFrames = 2 + (random8() & 7); //avoid overlapping requests from two driver modules
 				}
@@ -75,8 +77,9 @@ void Radio::frameTick(){
 				rfMode = RFMODE_MASTER_WAITING;
 				processCommand(rfBuffer);
 				ticksSinceLastComm = 0;
+				wakesSinceLastComm = 0;
 			}
-			if(ticksSinceLastComm > RF_TIMEOUT * FPS){
+			if(ticksSinceLastComm > RF_TIMEOUT * FPS || wakesSinceLastComm >= 3){
 				rfMode = RFMODE_ORPHAN;
 			}
 			waitFrames = 1;
@@ -119,6 +122,7 @@ void Radio::event(uint8_t type, uint8_t lbyte, uint8_t hbyte){
 		RFM73_PowerUp();
 		power = rfPowerState_ShortWake;
 		reportEvent(rfEvent_PowerState, power);
+		wakesSinceLastComm ++;
 	}else if(type==EVENT_DEEP_SLEEP_REQUESTED){
 		power = rfPowerState_ShortWake;
 		reportEvent(rfEvent_PowerState, power);
@@ -194,11 +198,16 @@ void Radio::processChangeState(uint8_t * data){
 			animation * anim;
 			colorSpace cs;
 			colorRaw newColor;
-			cs = (colorSpace)((data[3]>>4) & 0x0F);
-			memcpy(&newColor, &data[4], sizeof(colorRaw));
+			if(setMode == rfRegisterSet_Reset){
+				cs = COLORSPACE_RAW;
+				newColor = strip->getColor(LIGHT_COLOR_SET, COLORSPACE_RAW);
+			}else{
+				cs = (colorSpace)((data[3]>>4) & 0x0F);
+				memcpy(&newColor, &data[4], sizeof(colorRaw));
 			
-			if(cs==COLORSPACE_SRGB){
-				newColor = strip->mapper->fromRGB(newColor);
+				if(cs==COLORSPACE_SRGB){
+					newColor = strip->mapper->fromRGB(newColor);
+				}
 			}
 			
 			anim = animCreate(reg, strip->getColor(LIGHT_COLOR_DISPLAY, COLORSPACE_RAW), newColor, speed << 8, ANIM_REMOTE);
