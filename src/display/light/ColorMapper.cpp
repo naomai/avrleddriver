@@ -150,16 +150,19 @@ colorRaw ColorMapperCCT::fromRGB(colorRaw rgb){
 }
 
 colorRaw ColorMapperCCT::toRGB(colorRaw localColor){
-	colorRaw result=localColor;
+	colorRaw16 calcColor;
+	colorRaw result;
+	calcColor.r = (uint16_t)localColor.rgb.r + ((this->filterCold.rgb.r * (uint16_t)localColor.cct.cold)>>9);
+	calcColor.g = (uint16_t)localColor.rgb.g + ((this->filterCold.rgb.g * (uint16_t)localColor.cct.cold)>>9);
+	calcColor.b = (uint16_t)localColor.rgb.b + ((this->filterCold.rgb.b * (uint16_t)localColor.cct.cold)>>9);
 	
-	result.rgb.r = clampUByte(result.rgb.r + ((this->filterCold.rgb.r * (uint16_t)localColor.cct.cold)>>8));
-	result.rgb.g = clampUByte(result.rgb.r + ((this->filterCold.rgb.g * (uint16_t)localColor.cct.cold)>>8));
-	result.rgb.b = clampUByte(result.rgb.r + ((this->filterCold.rgb.b * (uint16_t)localColor.cct.cold)>>8));
+	calcColor.r = (uint16_t)localColor.rgb.r + ((this->filterWarm.rgb.r * (uint16_t)localColor.cct.warm)>>9);
+	calcColor.g = (uint16_t)localColor.rgb.g + ((this->filterWarm.rgb.g * (uint16_t)localColor.cct.warm)>>9);
+	calcColor.b = (uint16_t)localColor.rgb.b + ((this->filterWarm.rgb.b * (uint16_t)localColor.cct.warm)>>9);
 	
-	result.rgb.r = clampUByte(result.rgb.r + ((this->filterWarm.rgb.r * (uint16_t)localColor.cct.warm)>>8));
-	result.rgb.g = clampUByte(result.rgb.r + ((this->filterWarm.rgb.g * (uint16_t)localColor.cct.warm)>>8));
-	result.rgb.b = clampUByte(result.rgb.r + ((this->filterWarm.rgb.b * (uint16_t)localColor.cct.warm)>>8));
-
+	calcColor.cold = 0;
+	calcColor.warm = 0;
+	result = colorNormalize(calcColor);
 	return result;
 }
 
