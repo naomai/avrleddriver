@@ -26,7 +26,9 @@ typedef enum{
 } lightType;
 
 typedef enum{
-	LIGHT_COLOR_SET, LIGHT_COLOR_USER, LIGHT_COLOR_DISPLAY	
+	LIGHT_COLOR_SET, // memory
+	LIGHT_COLOR_USER, // temporary
+	LIGHT_COLOR_DISPLAY	// current frame
 } lightColorType;
 
 

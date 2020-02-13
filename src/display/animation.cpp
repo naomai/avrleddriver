@@ -134,8 +134,8 @@ void animAdvanceFrame(animation *a){
 			a->progress = 1;			
 		}else{ // animation is finished
 			strip->setColor(a->to, LIGHT_COLOR_DISPLAY, COLORSPACE_RAW);
-			if(a->tag != ANIM_TEMPFX && a->tag != ANIM_INTROCHAIN){
-				strip->setColor(a->to, LIGHT_COLOR_USER, COLORSPACE_RAW);
+			if(a->tag != ANIM_TEMPFX/* && a->tag != ANIM_INTROCHAIN*/){
+			strip->setColor(a->to, LIGHT_COLOR_USER, COLORSPACE_RAW);
 			}
 			strip->special &= ~(P_SPECIAL_ANIMATED);
 			a->progress = ~0;
