@@ -1,24 +1,25 @@
 #include <avr/io.h>
+#include <avr/boot.h>
 #include "../../config.h"
-#include "../types.h"
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifdef RADIO_OLD_PINOUT
-	#define PIN_IRQ PC4
-	#define PIN_CE PC2
-	#define PIN_CSN PC3
-	#define SIGNAL_DDR DDRC
-	#define SIGNAL_PORT PORTC
-	#define INPUT_DDR DDRC
-	#define INPUT_PIN PINC
+#define PIN_IRQ PC4
+#define PIN_CE PC2
+#define PIN_CSN PC3
+#define SIGNAL_DDR DDRC
+#define SIGNAL_PORT PORTC
+#define INPUT_DDR DDRC
+#define INPUT_PIN PINC
 #else
-	#define PIN_IRQ PC5
-	#define PIN_CE PD3
-	#define PIN_CSN PD2
-	#define SIGNAL_DDR DDRD
-	#define SIGNAL_PORT PORTD
-	#define INPUT_DDR DDRC
-	#define INPUT_PIN PINC
+#define PIN_IRQ PC5
+#define PIN_CE PD3
+#define PIN_CSN PD2
+#define SIGNAL_DDR DDRD
+#define SIGNAL_PORT PORTD
+#define INPUT_DDR DDRC
+#define INPUT_PIN PINC
 #endif
 
 void RFM73_InitInterface() BOOTLOADER_SECTION;
@@ -43,14 +44,14 @@ void RFM73_InitInterface(){
 void RFM73_SelectChip(bool state){
 	if(state){
 		SIGNAL_PORT &= ~(1<<PIN_CSN);
-	}else{
+		}else{
 		SIGNAL_PORT |= (1<<PIN_CSN);
 	}
 }
 void RFM73_EnableChip(bool state){
 	if(!state){
 		SIGNAL_PORT &= ~(1<<PIN_CE);
-	}else{
+		}else{
 		SIGNAL_PORT |= (1<<PIN_CE);
 	}
 }
