@@ -5,7 +5,7 @@
  *  Author: bun
  */ 
 
-#include "../config.h"
+#include "../../config.h"
 #include <avr/io.h>
 #include <util/delay.h>
 #include <stdbool.h>
@@ -13,9 +13,9 @@
 #include <avr/interrupt.h>
 #include <stdint.h>
 #include "RFM73.h"
-#include "RFM73_defs.h"
-#include "../types.h"
-#include "../debug.h"
+#include "defs.h"
+#include "../../types.h"
+#include "../../debug.h"
 
 #define PACKET_LEN 32
 
