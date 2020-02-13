@@ -213,7 +213,7 @@ void Radio::processChangeState(uint8_t * data){
 			anim = animCreate(reg, strip->getColor(LIGHT_COLOR_DISPLAY, COLORSPACE_RAW), newColor, speed << 8, ANIM_REMOTE);
 			animStart(anim);
 			if(setMode == rfRegisterSet_Permanent){
-				strip->setColor(newColor, LIGHT_COLOR_SET, cs);
+				strip->setColor(newColor, LIGHT_COLOR_SET, COLORSPACE_RAW);
 			}
 		}
 	}else if(reg==rfRegister_PowerState){
