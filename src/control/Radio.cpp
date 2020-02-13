@@ -8,7 +8,7 @@
 #include <string.h>
 #include "../config.h"
 #include "Radio.h"
-#include "../hardware/RFM73.h"
+#include "../hardware/rfm73/RFM73.h"
 #include "../random.h"
 #include "../LedDriver.h"
 #include "../debug.h"
