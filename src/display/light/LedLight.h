@@ -36,7 +36,7 @@ class LedLight{
 	ColorMapper *mapper;
 	
 	
-	void setColor(colorRaw color, lightColorType which, colorSpace space = COLORSPACE_SRGB);
+	void setColor(colorRaw color, lightColorType which, colorSpace space = COLORSPACE_SRGB, bool notify=true);
 	colorRaw getColor(lightColorType which, colorSpace space = COLORSPACE_SRGB);
 	colorRaw maskColor(colorRaw color);
 	void applySpecialColor();

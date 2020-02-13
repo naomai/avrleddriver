@@ -23,7 +23,7 @@ LedLight::LedLight(light_s *state) : stateHW(state), type(state->hardwareConfig.
 	this->tempColor = colorBlack;
 }
 
-void LedLight::setColor(colorRaw color, lightColorType which, colorSpace space){
+void LedLight::setColor(colorRaw color, lightColorType which, colorSpace space, bool notify){
 	colorRaw localColor;
 	if(space==COLORSPACE_SRGB){
 		localColor = this->mapper->fromRGB(color);
@@ -43,11 +43,13 @@ void LedLight::setColor(colorRaw color, lightColorType which, colorSpace space){
 		return;
 	}
 	
-	eventDescriptor ev;
-	ev.type = EVENT_COLOR_CHANGE;
-	ev.lbyte = this->myId;
-	ev.hbyte = which;
-	dispatcher->queue->pushEvent(ev);
+	if(notify){
+		eventDescriptor ev;
+		ev.type = EVENT_COLOR_CHANGE;
+		ev.lbyte = this->myId;
+		ev.hbyte = which;
+		dispatcher->queue->pushEvent(ev);
+	}
 }
 
 colorRaw LedLight::getColor(lightColorType which, colorSpace space){
@@ -77,7 +79,7 @@ colorRaw LedLight::maskColor(colorRaw color){
 void LedLight::applySpecialColor(){
 	if(this->special & (P_SPECIAL_RANDOM)){
 		colorRaw color = HSV2RGB(randomColor());
-		if(this->special & P_SPECIAL_DONTRESET){
+		if(this->special & P_SPECIAL_DONTRESET ){
 			this->setColor(color,LIGHT_COLOR_DISPLAY, COLORSPACE_SRGB);
 		}else{
 			this->setColor(color,LIGHT_COLOR_USER, COLORSPACE_SRGB);
@@ -109,7 +111,7 @@ void LedLight::setPowerState(powerState pwr){
 		
 	}else if(pwr == PS_ON){
 		this->special &= ~P_SPECIAL_POWERDOWN;
-		
+		applySpecialColor();
 		animCreate(myId, getColor(LIGHT_COLOR_DISPLAY, COLORSPACE_RAW), 
 			getColor(LIGHT_COLOR_USER, COLORSPACE_RAW), 16 << 8, (animType)ANIM_INTROCHAIN);
 		

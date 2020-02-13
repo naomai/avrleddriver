@@ -63,7 +63,7 @@ uint8_t readSettingsFromStream(streamWrapper *stream) {
 				sread(&newColorH,sizeof(newColorH),1,stream);
 				if(stripId>=STRIPS_COUNT) break;
 				s=lights->getLightById(stripId);
-				s->setColor(HSV2RGB(newColorH), LIGHT_COLOR_USER, COLORSPACE_SRGB);
+				s->setColor(HSV2RGB(newColorH), LIGHT_COLOR_SET, COLORSPACE_SRGB, false);
 				s->special &= 0xF0;
 				break;
 			case ec_RGB:
@@ -71,7 +71,7 @@ uint8_t readSettingsFromStream(streamWrapper *stream) {
 				sread(&newColorR,sizeof(newColorR),1,stream);
 				if(stripId>=STRIPS_COUNT) break;
 				s=lights->getLightById(stripId);
-				s->setColor(newColorR, LIGHT_COLOR_USER, COLORSPACE_RAW);
+				s->setColor(newColorR, LIGHT_COLOR_SET, COLORSPACE_RAW, false);
 				s->special &= 0xF0;
 				break;
 			case ec_Special:
