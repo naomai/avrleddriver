@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 void RFM73_Init() __attribute__((noinline)) BOOTLOADER_SECTION; 
-void RFM73_InitInterface() __attribute__((noinline)) BOOTLOADER_SECTION;
+void RFM73_InitInterface();
 void RFM73_InitChip() __attribute__((optimize("Os"))) __attribute__((noinline)) BOOTLOADER_SECTION;
 bool RFM73_IsRadioPresent() __attribute__((noinline)) BOOTLOADER_SECTION;
 void RFM73_ListenStart() __attribute__((optimize("Os"))) __attribute__((noinline)) BOOTLOADER_SECTION;
