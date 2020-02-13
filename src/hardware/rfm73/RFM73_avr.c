@@ -1,7 +1,7 @@
-#include "../../config.h"
 #include <avr/io.h>
-#include <stdbool.h>
-#include <avr/boot.h>
+#include "../../config.h"
+#include "../types.h"
+#include <stdint.h>
 
 #ifdef RADIO_OLD_PINOUT
 	#define PIN_IRQ PC4
@@ -21,9 +21,10 @@
 	#define INPUT_PIN PINC
 #endif
 
-void RFM73_InitInterface() __attribute__((noinline)) BOOTLOADER_SECTION;
+void RFM73_InitInterface() BOOTLOADER_SECTION;
 void RFM73_SelectChip(bool state) BOOTLOADER_SECTION;
 void RFM73_EnableChip(bool state) BOOTLOADER_SECTION;
+uint8_t RFM73_SwapByte(uint8_t byte) BOOTLOADER_SECTION;
 bool RFM73_InterruptState() BOOTLOADER_SECTION;
 
 void RFM73_InitInterface(){
@@ -52,6 +53,18 @@ void RFM73_EnableChip(bool state){
 	}else{
 		SIGNAL_PORT |= (1<<PIN_CE);
 	}
+}
+
+uint8_t RFM73_SwapByte(uint8_t byte){
+	// exact code from Atmega328P DS
+	/* Wait for empty transmit buffer */
+	while (!(UCSR0A & (1<<UDRE0)));
+	/* Put data into buffer, sends the data */
+	UDR0 = byte;
+	/* Wait for data to be received */
+	while (!(UCSR0A & (1<<RXC0)));
+	/* Get and return received data from buffer */
+	return UDR0;
 }
 
 bool RFM73_InterruptState(){

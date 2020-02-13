@@ -25,7 +25,7 @@ void RFM73_TransmitStart(uint32_t addr) BOOTLOADER_SECTION;
 void RFM73_SelectChip(bool state);
 void RFM73_EnableChip(bool state);
 bool RFM73_InterruptState();
-uint8_t RFM73_SwapByte(uint8_t byte) __attribute__((noinline)) BOOTLOADER_SECTION;
+uint8_t RFM73_SwapByte(uint8_t byte);
 uint8_t RFM73_SwitchBank(uint8_t bank) BOOTLOADER_SECTION;
 void RFM73_Reset();
 void RFM73_SetTRXMode(trxMode mode);
@@ -258,17 +258,7 @@ bool RFM73_IsRadioPresent(){
 	return radioPresent;
 }
 
-uint8_t RFM73_SwapByte(uint8_t byte){
-	// exact code from Atmega328P DS
-	/* Wait for empty transmit buffer */
-	while (!(UCSR0A & (1<<UDRE0)));
-	/* Put data into buffer, sends the data */
-	UDR0 = byte;
-	/* Wait for data to be received */
-	while (!(UCSR0A & (1<<RXC0)));
-	/* Get and return received data from buffer */
-	return UDR0;
-}
+
 
 uint8_t RFM73_SwitchBank(uint8_t bank){
 	uint8_t status = RFM73_GetStatus();
