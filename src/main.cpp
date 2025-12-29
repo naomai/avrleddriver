@@ -21,6 +21,7 @@
 #include "control/Menu.h"
 #include "SettingsModule.h"
 #include "control/Radio.h"
+#include "control/UARTController.h"
 #include "PowerMgmt.h"
 
 void updateFrame();
@@ -37,6 +38,7 @@ Encoder *enc;
 Menu *menu;
 Settings *settings;
 Radio *rf;
+UARTController *uart;
 PowerManagement *pwr;
 
 bool requestFxFrame = false, schedulerAction = false;
@@ -76,7 +78,12 @@ int main(){
 		dispatcher->registerModule(rf);
 		rf->signIn(DEVICE_SERIAL);
 	#endif
-	
+
+	#ifdef UART_ENABLE
+		uart = new UARTController();
+		dispatcher->registerModule(uart);
+	#endif
+
 	// must be registered last
 	pwr = new PowerManagement();
 	dispatcher->registerModule(pwr);

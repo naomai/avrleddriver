@@ -94,6 +94,9 @@
 #define RADIO_ENABLE
 //#define RADIO_OLD_PINOUT // 001cocina
 
+// remote control using UART interface (ESP32)
+//#define UART_ENABLE
+
 /*       rotary encoder         */
 
 #define ENCODER_PORT  PORTD
