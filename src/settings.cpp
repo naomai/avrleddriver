@@ -61,7 +61,7 @@ uint8_t readSettingsFromStream(streamWrapper *stream) {
 			case ec_HSV:
 				stripId = sgetc(stream);
 				sread(&newColorH,sizeof(newColorH),1,stream);
-				if(stripId>=STRIPS_COUNT) break;
+				if(stripId>=ENTITY_COUNT) break;
 				s=lights->getLightById(stripId);
 				s->setColor(HSV2RGB(newColorH), LIGHT_COLOR_SET, COLORSPACE_SRGB, false);
 				s->special &= 0xF0;
@@ -69,14 +69,14 @@ uint8_t readSettingsFromStream(streamWrapper *stream) {
 			case ec_RGB:
 				stripId = sgetc(stream);
 				sread(&newColorR,sizeof(newColorR),1,stream);
-				if(stripId>=STRIPS_COUNT) break;
+				if(stripId>=ENTITY_COUNT) break;
 				s=lights->getLightById(stripId);
 				s->setColor(newColorR, LIGHT_COLOR_SET, COLORSPACE_RAW, false);
 				s->special &= 0xF0;
 				break;
 			case ec_Special:
 				stripId = sgetc(stream);
-				if(stripId>=STRIPS_COUNT) break;
+				if(stripId>=ENTITY_COUNT) break;
 				s=lights->getLightById(stripId);
 				s->special = sgetc(stream) & 0x0F;
 				s->applySpecialColor();
@@ -96,7 +96,7 @@ uint8_t readSettingsFromStream(streamWrapper *stream) {
 				
 				speed = sgetc(stream); //newColorR.rgb.special;
 				//newColorR.rgb.special = 0;
-				if(stripId>=STRIPS_COUNT) break;
+				if(stripId>=ENTITY_COUNT) break;
 				anim = animCreate(stripId, s->getColor(LIGHT_COLOR_DISPLAY), newColorR, speed << 8, ANIM_REMOTE);
 				
 				animStart(anim);
@@ -138,7 +138,7 @@ uint8_t readSettingsFromStream(streamWrapper *stream) {
 }
 
 void writeSettingsToStream(streamWrapper *stream){
-	for(uint8_t i=0; i<STRIPS_COUNT; i++){
+	for(uint8_t i=0; i<ENTITY_COUNT; i++){
 		LedLight *strip = lights->getLightById(i);
 		if(strip->special & 0x1F){ // special color
 			sputc(ec_Special, stream);

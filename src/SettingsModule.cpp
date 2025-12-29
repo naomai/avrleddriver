@@ -45,7 +45,7 @@ void Settings::tick(){
 void Settings::saverBlinker(){
 	animation * anim;
 	LedLight * l;
-	for(uint8_t i=0; i<STRIPS_COUNT; i++){
+	for(uint8_t i=0; i<ENTITY_COUNT; i++){
 		l = lights->getLightById(i);
 		anim = animCreate(i, colorWhite, l->getColor(LIGHT_COLOR_USER, COLORSPACE_RAW), 8 << 8, ANIM_TEMPFX);
 		animStart(anim);

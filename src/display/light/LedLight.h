@@ -24,7 +24,7 @@ class LedLight{
 	friend class LedDriver;
 	protected:
 	light_s *stateHW;
-	lightType type; // type of light (RGB, white, etc)
+	entityType type; // type of light (RGB, white, etc)
 	colorRaw memColor; // color selected by user (in memory)
 	colorRaw userColor; // color selected by user (temporary)
 	colorRaw tempColor; // color in current frame (modified by menu, animations, etc)

@@ -14,13 +14,15 @@
 #include "../debug.h"
 #include "../display/animation.h"
 #include "../PowerMgmt.h"
+#include "../sensor/SensorHub.h"
 
 #define ADDR_PREFIX RFM73_ADDRESS_BASE
 #define ADDR_MASTER (ADDR_PREFIX)
 
 
-extern const lightConfig PROGMEM lightsConfig[STRIPS_COUNT];
+extern const entityConfig PROGMEM lightsConfig[ENTITY_COUNT];
 extern LedDriver *lights;
+extern SensorHub *sensors;
 extern PowerManagement *pwr;
 
 Radio::Radio() : Module(){
@@ -158,6 +160,9 @@ void Radio::processCommand(uint8_t * data){
 				rfMode = RFMODE_READY_TO_RESPOND;
 				waitFrames = 1;
 			}
+			break;
+		default:
+			break;
 	}
 }
 
@@ -168,10 +173,19 @@ void Radio::processRequest(uint8_t * data){
 	switch(param){
 		case rfParam_Config:
 			//_log("PARAMREQ");
-			responseBuffer[2] = STRIPS_COUNT;
-			responseBuffer[3] = MAX_CHANNELS_PER_LIGHT;
-			for(uint8_t i=0; i<STRIPS_COUNT; i++){
-				responseBuffer[4+i] = pgm_read_byte(&lightsConfig[i].type);
+			responseBuffer[2] = ENTITY_COUNT;
+			responseBuffer[3] = MAX_BYTES_PER_ENTITY;
+			for(uint8_t i=0; i<ENTITY_COUNT; i++){
+				uint8_t type = pgm_read_byte(&lightsConfig[i].type);
+				if((type&0xE0) == SENSOR_MASK){
+				#ifdef SENSORS_ENABLE
+					SensorData *s = sensors->getSensorById(i);
+					responseBuffer[4+i] = s->type;
+				#endif
+				} else {
+					responseBuffer[4+i] = type;
+				}					
+				
 				responseLength = 5+i;
 			}
 			sendResponse();
@@ -185,7 +199,11 @@ void Radio::processRequest(uint8_t * data){
 
 void Radio::processChangeState(uint8_t * data){
 	rfParam reg = (rfParam)data[1];
-	if(reg < 128 && reg < STRIPS_COUNT){
+	if(reg < 128 && reg < ENTITY_COUNT){
+		uint8_t type = pgm_read_byte(&lightsConfig[reg].type);
+		if((type&0xE0) == SENSOR_MASK){
+			return;
+		}
 		rfRegisterSet setMode;
 		LedLight* strip = lights->getLightById(reg);
 		setMode = (rfRegisterSet)(data[3] & 0x0F);
@@ -257,17 +275,30 @@ void Radio::reportState(uint8_t reg){
 void Radio::respondState(uint8_t reg){
 	//_logf("STATERQ %i", reg);
 	responseBuffer[2] = reg;
-	if(reg < 128 && reg < STRIPS_COUNT){
-		LedLight *s = lights->getLightById(reg);
+	if(reg < 128 && reg < ENTITY_COUNT){
 		uint8_t bufferOffset = 3;
-		colorRaw col = s->getColor(LIGHT_COLOR_USER, COLORSPACE_SRGB);
-		memcpy(&responseBuffer[bufferOffset], &col, sizeof(col));
-		bufferOffset += sizeof(col);
-		col = s->getColor(LIGHT_COLOR_USER, COLORSPACE_RAW);
-		memcpy(&responseBuffer[bufferOffset], &col, sizeof(col));
-		bufferOffset += sizeof(col);
-		responseBuffer[bufferOffset] = s->special & 0x0F;
-		bufferOffset += 1;
+		uint8_t type = pgm_read_byte(&lightsConfig[reg].type);
+		if((type&0xE0) == SENSOR_MASK){
+			#ifdef SENSORS_ENABLE
+			SensorData *s = sensors->getSensorById(reg);
+			memcpy(&responseBuffer[bufferOffset], &s->data, MAX_BYTES_PER_ENTITY);
+			bufferOffset += MAX_BYTES_PER_ENTITY;
+			responseLength = bufferOffset;
+			sendResponse();
+			#endif
+		}
+		else
+		{
+			LedLight *s = lights->getLightById(reg);
+			colorRaw col = s->getColor(LIGHT_COLOR_USER, COLORSPACE_SRGB);
+			memcpy(&responseBuffer[bufferOffset], &col, sizeof(col));
+			bufferOffset += sizeof(col);
+			col = s->getColor(LIGHT_COLOR_USER, COLORSPACE_RAW);
+			memcpy(&responseBuffer[bufferOffset], &col, sizeof(col));
+			bufferOffset += sizeof(col);
+			responseBuffer[bufferOffset] = s->special & 0x0F;
+			bufferOffset += 1;
+		}
 		responseLength = bufferOffset;
 		sendResponse();
 	}else if(reg == rfRegister_PowerState){

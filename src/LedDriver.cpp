@@ -11,16 +11,19 @@
 #include "hardware/pwm/pwm.h"
 #include "PowerMgmt.h"
 
-extern const lightConfig PROGMEM lightsConfig[STRIPS_COUNT] = LIGHTS_CONFIG;
+extern const entityConfig PROGMEM lightsConfig[ENTITY_COUNT] = LIGHTS_CONFIG;
 extern const lightCalibration PROGMEM calibrationTable[] = CALIBRATION_TABLE;
 
 LedDriver::LedDriver() : Module(){
-	lightConfig cfg;
+	entityConfig cfg;
 	light_s *stateHW;
 	LedLight * s;
 	this->ledHal = new LedHardware();
-	for(uint8_t i=0; i<STRIPS_COUNT; i++){
-		memcpy_P(&cfg, &lightsConfig[i], sizeof(lightConfig));
+	for(uint8_t i=0; i<ENTITY_COUNT; i++){
+		memcpy_P(&cfg, &lightsConfig[i], sizeof(entityConfig));
+		if((cfg.type & 0xE0) == SENSOR_MASK) {
+			continue;
+		}
 		stateHW = ledHal->registerLight(&cfg);
 		s = new LedLight(stateHW);
 		s->myId = i;
@@ -31,12 +34,16 @@ LedDriver::LedDriver() : Module(){
 		s->applySpecialColor();
 		this->lights[i] = s;
 	}
+	this->ledHal->initFinished();
 	powerDown = false;
 
 }
 
 LedDriver::~LedDriver(){
-	for(uint8_t i=0; i<STRIPS_COUNT; i++){
+	for(uint8_t i=0; i<ENTITY_COUNT; i++){
+		if(this->lights[i]==NULL) {
+			continue;
+		}
 		delete this->lights[i];
 	}
 	delete this->ledHal;
@@ -50,10 +57,12 @@ void LedDriver::event(uint8_t type, uint8_t lbyte, uint8_t hbyte){
 	uint16_t frameId = (hbyte<<8) | lbyte;
 	if(type==EVENT_FRAME){
 		if(!powerDown && frameId % 16 == 0){
-			for(uint8_t i=0; i<STRIPS_COUNT; i++){
+			for(uint8_t i=0; i<ENTITY_COUNT; i++){
 				LedLight *l;
 				l = this->getLightById(i);
-				l->resetTempColor();
+				if(l!=NULL) {
+					l->resetTempColor();
+				}
 			}
 		}
 		
@@ -74,13 +83,16 @@ void LedDriver::event(uint8_t type, uint8_t lbyte, uint8_t hbyte){
 }
 
 LedLight* LedDriver::getLightById(uint8_t lightId){
-	if(lightId >= STRIPS_COUNT) return NULL;
+	if(lightId >= ENTITY_COUNT) return NULL;
 	return this->lights[lightId];
 }
 
 void LedDriver::setPowerStateForAll(powerState pwr){
-	for(uint8_t i=0; i<STRIPS_COUNT; i++){
+	for(uint8_t i=0; i<ENTITY_COUNT; i++){
 		LedLight *l = this->getLightById(i);
-		l->setPowerState(pwr);
+		if(l!=NULL){
+			l->setPowerState(pwr);
+		}
 	}	
 }
+

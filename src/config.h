@@ -14,7 +14,7 @@
 #include "mcu.h"
 
 #define DEVICE_SERIAL 99 // for radio identification
-#define STRIPS_COUNT 2 //number of led lights
+#define ENTITY_COUNT 7 //number of led lights
 
 
 
@@ -46,8 +46,10 @@
 	{.type=LIGHT_RGBW, .pins={2,3,1,0}, .calibrationIdx=0}, \
 	{.type=LIGHT_RGBW, .pins={6,7,5,4}, .calibrationIdx=0}, \
 	{.type=LIGHT_RGBW, .pins={10,11,9,8}, .calibrationIdx=0}, \
-	{.type=LIGHT_CCT, .pins={0,0,0,16,17}, .calibrationIdx=1}, \
-} //*/
+
+/*	{.type=SENSOR_HUMIDITY, .pins={0}}, \
+	{.type=SENSOR_TEMPERATURE, .pins={1}}, \
+	{.type=SENSOR_BATTERY, .pins={2}}, \*/
 
 // 099proto
 #define LIGHTS_CONFIG { \

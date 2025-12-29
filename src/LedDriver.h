@@ -18,10 +18,10 @@
 
 class LedDriver : public Module{
 	protected:
-	LedLight *lights[STRIPS_COUNT];
+	LedLight *lights[ENTITY_COUNT];
 	LedHardware *ledHal;
 	bool powerDown;
-	
+
 	public:
 	LedDriver();
 	~LedDriver();

@@ -11,7 +11,7 @@
 
 #include "color.h"
 
-#define MAX_CHANNELS_PER_LIGHT 5 // RGB + WW (CCT)
+#define MAX_BYTES_PER_ENTITY 5 // RGB + WW (CCT)
 
 typedef enum{
 	LIGHT_RED = 0x04,
@@ -22,8 +22,13 @@ typedef enum{
 	LIGHT_CCT = LIGHT_WHITE|LIGHT_WHITEWARM,
 	LIGHT_RGB = LIGHT_RED|LIGHT_GREEN|LIGHT_BLUE,
 	LIGHT_RGBW = LIGHT_RGB|LIGHT_WHITE,
-	LIGHT_RGBCCT = LIGHT_RGB|LIGHT_CCT
-} lightType;
+	LIGHT_RGBCCT = LIGHT_RGB|LIGHT_CCT,
+	// UGLY
+	SENSOR_MASK = 0x20,
+	SENSOR_HUMIDITY = SENSOR_MASK | 0x01,
+	SENSOR_TEMPERATURE = SENSOR_MASK | 0x02,
+	SENSOR_BATTERY = SENSOR_MASK | 0x03,
+} entityType;
 
 typedef enum{
 	LIGHT_COLOR_SET, // memory
@@ -45,10 +50,10 @@ typedef struct {
 }lightCalibration;
 
 typedef struct {
-	lightType type;
-	uint8_t pins[MAX_CHANNELS_PER_LIGHT];
+	entityType type;
+	uint8_t pins[MAX_BYTES_PER_ENTITY];
 	uint8_t calibrationIdx;		
-} lightConfig;
+} entityConfig;
 
 
 

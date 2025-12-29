@@ -27,7 +27,7 @@ const menuType menuFlow[] = {
 
 const menuProps menuProperties[] PROGMEM = {
 	{MENU_NOTHING, {0,2}, 0, false},
-	{MENU_ID, {0,STRIPS_COUNT}, 1, true},
+	{MENU_ID, {0,ENTITY_COUNT}, 1, true},
 	{MENU_PRESET, {0,count(colorPresets)}, 1, true},
 	{MENU_H, {0,256}, 8, false},
 	{MENU_S, {0,256}, 8, false},
@@ -97,7 +97,7 @@ void Menu::next(){
 }
 
 bool Menu::isMenuValid(menuType menu){
-	if(menu == MENU_ID && STRIPS_COUNT == 1)
+	if(menu == MENU_ID && ENTITY_COUNT == 1)
 		// skip strip selection if there's only 1
 		return false;
 	if(menu == MENU_V && (currentLight->special & 0x0F)) 

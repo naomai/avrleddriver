@@ -24,6 +24,8 @@
 #include "control/UARTController.h"
 #include "control/SPIExtension.h"
 #include "PowerMgmt.h"
+#include "sensor/SensorHub.h"
+#include "sensor/DHT.h"
 
 void updateFrame();
 
@@ -35,6 +37,8 @@ void operator delete(void* ptr) { free(ptr); }
 
 Dispatcher *dispatcher;
 LedDriver *lights;
+SensorHub *sensors;
+DHT *DHTSensor;
 Encoder *enc;
 Menu *menu;
 Settings *settings;
@@ -65,7 +69,15 @@ int main(){
 	settings = new Settings();
 	dispatcher->registerModule(settings);
 	lights = new LedDriver();
-	dispatcher->registerModule(lights);
+	dispatcher->registerModule(lights);	
+	#ifdef SENSORS_ENABLE
+		sensors = new SensorHub();
+		dispatcher->registerModule(sensors);
+		#ifdef SENSORS_DHT_ENABLE
+			DHTSensor = new DHT();
+			dispatcher->registerModule(DHTSensor);
+		#endif
+	#endif
 	#ifdef ENCODER_ENABLE
 		enc = new Encoder();
 		dispatcher->registerModule(enc);
