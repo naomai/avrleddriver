@@ -50,12 +50,14 @@ void PowerManagement::shortWakeStart(){
 	state = PS_DEEPSLEEP_SHORTWAKE;
 	this->raiseEvent(EVENT_DEEP_SLEEP_SHORTWAKE, 0, 0, false);
 	set_sleep_mode(SLEEP_MODE_IDLE);
+	dsTimerOverflows = 0;
 	//PORTC |= (1<<PC3);
 }
 
 void PowerManagement::shortWakeEnd(){
 	this->raiseEvent(EVENT_DEEP_SLEEP_ENTER, 0, 0, true);
 	set_sleep_mode(SLEEP_MODE_IDLE);
+	dsTimerOverflows = 0;
 	//PORTC &= ~(1<<PC3);
 }
 
@@ -120,12 +122,10 @@ ISR (TIMER2_OVF_vect){
 	if(pwr->state == PS_DEEPSLEEP){
 		if(++dsTimerOverflows >= PWRMGMT_DS_TIMER_CYCLES_PER_SECOND * PWRMGMT_DS_INTERVAL_MS / 1000){
 			pwr->shortWakeStart();
-			dsTimerOverflows = 0;
 		}
 	}else if(pwr->state == PS_DEEPSLEEP_SHORTWAKE){
 		if(++dsTimerOverflows >= PWRMGMT_DS_TIMER_CYCLES_PER_SECOND * PWRMGMT_DS_SHORTWAKE_MS / 1000){
 			pwr->shortWakeEnd();
-			dsTimerOverflows = 0;
 		}
 	}	
 }
