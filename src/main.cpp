@@ -161,7 +161,7 @@ void updateFrame(){
 	frameId++;
 	
 	#ifdef DEBUG_FRAMESTROBE
-		//PORTC ^= (1<<PC2);
+		PORTC ^= (1<<PC2);
 	#endif
 }
 
