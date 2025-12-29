@@ -20,7 +20,7 @@ LinkedList::~LinkedList(){
 
 	
 void LinkedList::add(void *ptr){
-	LinkedListNode *newNode = (LinkedListNode*)malloc(sizeof(LinkedListNode));
+	LinkedListNode *newNode = new LinkedListNode;
 	newNode->dataPtr = ptr;
 	newNode->nextNodePtr = NULL;
 	if(!this->length){
@@ -33,24 +33,25 @@ void LinkedList::add(void *ptr){
 }
 	
 void LinkedList::remove(void *ptr){
-	LinkedListNode *current=this->first, *next, *previous = NULL;
+	LinkedListNode *curr=this->first, *next_, *previous_ = NULL;
 	for(uint8_t i=0; i<this->length; i++){
-		next = current->nextNodePtr;
-		if(current->dataPtr == ptr){
+		next_ = curr->nextNodePtr;
+		if(curr->dataPtr == ptr){
 			if(i==0){
-				this->first = next;
+				this->first = next_;
 			}else{
 				if(i == this->length-1){
-					this->last = previous;
+					this->last = previous_;
 				}
-				previous->nextNodePtr = next;
+				previous_->nextNodePtr = next_;
 			}
-			free(current);
+			delete curr;
+			//free(current);
 			this->length--;
 			break;
 		}
-		previous = current;
-		current = next;
+		previous_ = curr;
+		curr = next_;
 	}
 }
 	
