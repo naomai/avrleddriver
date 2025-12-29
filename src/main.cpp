@@ -22,6 +22,7 @@
 #include "SettingsModule.h"
 #include "control/Radio.h"
 #include "control/UARTController.h"
+#include "control/SPIExtension.h"
 #include "PowerMgmt.h"
 
 void updateFrame();
@@ -39,6 +40,7 @@ Menu *menu;
 Settings *settings;
 Radio *rf;
 UARTController *uart;
+SPIExtension *spiex;
 PowerManagement *pwr;
 
 bool requestFxFrame = false, schedulerAction = false;
@@ -84,6 +86,12 @@ int main(){
 		dispatcher->registerModule(uart);
 	#endif
 
+	
+	#ifdef SPIEX_ENABLE
+		spiex = new SPIExtension();
+		dispatcher->registerModule(spiex);
+	#endif
+	
 	// must be registered last
 	pwr = new PowerManagement();
 	dispatcher->registerModule(pwr);
