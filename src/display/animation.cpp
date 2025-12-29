@@ -160,11 +160,7 @@ void animAdvanceFrame(animation *a){
 
 void animFinished(animation *a){
 	//_logf("Finished strip %i", a->stripId);
-	eventDescriptor ev;
-	ev.type = EVENT_ANIM_FINISH;
-	ev.lbyte = a->tag;
-	ev.hbyte = a->stripId;
-	dispatcher->queue->pushEvent(ev);
+	dispatcher->event_queue->pushEvent(EVENT_ANIM_FINISH, a->tag,  a->stripId);
 }
 
 bool animIsActive(animation *a){
