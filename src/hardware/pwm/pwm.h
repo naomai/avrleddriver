@@ -21,6 +21,8 @@ void pwmPrepareStart();
 void pwmBufferLight(light_s *s);
 void pwmPrepareFinish() /*__attribute__((optimize("Os")))*/;
 bool pwmIsReady();
+
+extern uint8_t PWMChannels;
 #ifdef __cplusplus
 }
 #endif

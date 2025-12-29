@@ -20,7 +20,7 @@
 
 
 typedef struct { // light state
-	lightConfig hardwareConfig;
+	entityConfig hardwareConfig;
 	colorRaw color; // currently displayed color
 } light_s;
 
@@ -29,11 +29,12 @@ typedef struct { // light state
 
 	class LedHardware{
 		protected:
-		LinkedList *lights;
+		LinkedList *light_list;
 		public:
 		LedHardware();
 		~LedHardware();
-		light_s* registerLight(lightConfig *config);
+		light_s* registerLight(entityConfig *config);
+		void initFinished();
 		void tick();
 	};
 #endif

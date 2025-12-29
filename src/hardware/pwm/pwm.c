@@ -9,6 +9,7 @@
 #include "pwm_lowlevel.h"
 #include "../LedHardware.h"
 #include <string.h>
+#include <stdlib.h>
 
 #pragma GCC optimize("Os")
 
@@ -33,10 +34,12 @@ const uint16_t PROGMEM gammaLut[256]={
 
 
 // table of LED turnoff events: time + bitNumber
-static PWMEvent PWMTable[STRIPS_COUNT*MAX_CHANNELS_PER_LIGHT];
+static PWMEvent *PWMTable;
 // table pointing to elements from PWMTable in sorted order
-static PWMEvent* PWMTableSorted[STRIPS_COUNT*MAX_CHANNELS_PER_LIGHT];
+static PWMEvent** PWMTableSorted;
+
 static uint8_t PWMTableCount;
+uint8_t PWMChannels = 0;
 
 //static void pwmMoveShortEvents();
 static void addPWMItem(uint8_t offset, uint8_t bit);
@@ -46,6 +49,8 @@ static void addPWMItem(uint8_t offset, uint8_t bit);
 #define MASK_BIT(m,b) (m[(b)>>3] & (1 << ((b)&0x07)))
 
 void initPwm(){
+	PWMTable = calloc(PWMChannels, sizeof(PWMEvent));
+	PWMTableSorted = calloc(PWMChannels, sizeof(PWMEvent*));
 	initPwmLow();	
 }
 
@@ -64,7 +69,7 @@ void pwmPrepareStart() {
 
 
 void pwmBufferLight(light_s *s){
-	lightType type = s->hardwareConfig.type;
+	entityType type = s->hardwareConfig.type;
 	
 	if(type&LIGHT_RED)
 		addPWMItem(s->color.rgb.r, s->hardwareConfig.pins[0]);
@@ -86,12 +91,12 @@ void pwmPrepareFinish() {
 	precalcPrev = &workBuffer.precalcTable[0];
 	precalcPrev->delay = 0;
 	precalcPrev->ticks = 0;
-	memcpy(precalcPrev->portMask, workBuffer.extenderMask, EXTENDER_BYTES);
+	memcpy(&precalcPrev->portMask[0], &workBuffer.extenderMask[0], EXTENDER_BYTES);
 	precalcCurrent = &workBuffer.precalcTable[1];
 	precalcCurrent->delay = 0;
 	
 	uint8_t currentMask[EXTENDER_BYTES];
-	memcpy(currentMask,  workBuffer.extenderMask, EXTENDER_BYTES);
+	memcpy(currentMask, &workBuffer.extenderMask[0], EXTENDER_BYTES);
 	//uint16_t prevMask=currentMask;
 	//uint16_t nextMask;
 	

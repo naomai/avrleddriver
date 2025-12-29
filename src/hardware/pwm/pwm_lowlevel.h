@@ -26,7 +26,7 @@ typedef struct {
 
 
 typedef struct{
-	PWMPrecalcEvent precalcTable[STRIPS_COUNT*MAX_CHANNELS_PER_LIGHT];
+	PWMPrecalcEvent *precalcTable;
 	
 	uint8_t precalcCount;
 	uint8_t extenderMask[EXTENDER_BYTES];

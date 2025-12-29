@@ -9,6 +9,7 @@
 #include "pwm_lowlevel.h"
 #include "../../extender.h"
 #include <string.h>
+#include <stdlib.h>
 
 PWMOFFSET_VARTYPE shortPulsesTimingRoutine();
 void maybeSwapBuffers();
@@ -23,7 +24,7 @@ PWMBuffer outputBuffer; // currently "displayed" by PWM
 PWMBuffer workBuffer; // currently processed in background
 //#define outputBuffer workBuffer
 uint8_t PWMTableOffset; // offset in outputBuffer for low-level PWM
-
+extern uint8_t PWMChannels;
 
 //volatile uint8_t swapPending = 0; // copy workBuffer to outputBuffer after current PWM cycle
 //uint8_t swapInProgress = 0; // set at the end of cycle when swapPending=1
@@ -32,7 +33,7 @@ volatile pwmBufferSwapStatus bufferSwapStatus;
 
 uint8_t swapIndex = 0;
 
-PWMPrecalcEvent *currentPrecalcEvent = &outputBuffer.precalcTable[0];
+PWMPrecalcEvent *currentPrecalcEvent;
 PWMPrecalcEvent *lastPrecalcEvent;
 PWMOFFSET_VARTYPE PWMOffset = 0;
 uint8_t PWMCycles = 0;
@@ -45,6 +46,9 @@ void initPwmLow(){
 	TCCR1A &= ~(1<<COM1A0 | 1<< COM1A1);
 	TCCR1B &= 0x07;
 	TCCR1B |= 0x02 | (1<<WGM12);
+	outputBuffer.precalcTable = calloc(PWMChannels, sizeof(PWMPrecalcEvent));
+	workBuffer.precalcTable = calloc(PWMChannels, sizeof(PWMPrecalcEvent));
+	currentPrecalcEvent = &outputBuffer.precalcTable[0];
 }
 
 ISR(TIMER1_COMPA_vect)

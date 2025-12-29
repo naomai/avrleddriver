@@ -8,33 +8,43 @@
 #include "LedHardware.h"
 #include "../display/color.h"
 #include "pwm/pwm.h"
-
+#include <string.h>
 
 
 LedHardware::LedHardware(){
-	lights = new LinkedList();
-	initPwm();
+	light_list = new LinkedList();
+	PWMChannels = 0;
 }
 LedHardware::~LedHardware(){
-	for(light_s *s=(light_s*)lights->reset(); lights->isValid(); s=(light_s*)lights->next()){
+	for(light_s *s=(light_s*)light_list->reset(); light_list->isValid(); s=(light_s*)light_list->next()){
 		delete s;
 	}
-	delete lights;	
+	delete light_list;	
 }
 	
-light_s* LedHardware::registerLight(lightConfig *config){
+light_s* LedHardware::registerLight(entityConfig *config){
 	light_s *s = new light_s;
-	s->hardwareConfig = *config;
+	memcpy(&s->hardwareConfig, config, sizeof(entityConfig));
 	s->color = colorWhite;
-	lights->add(s);
+	light_list->add(s);
+	
+	if(config->type & LIGHT_BLUE) PWMChannels++;
+	if(config->type & LIGHT_GREEN) PWMChannels++;
+	if(config->type & LIGHT_RED) PWMChannels++;
+	if(config->type & LIGHT_WHITE) PWMChannels++;
+	if(config->type & LIGHT_WHITEWARM) PWMChannels++;
 	return s;
+}
+
+void LedHardware::initFinished(){
+	initPwm();
 }
 	
 void LedHardware::tick(){
 	if(pwmIsReady()){ // else drop frame
 		pwmPrepareStart();
 		//generate led turnoff time table
-		for(light_s *s=(light_s*)lights->reset(); lights->isValid(); s=(light_s*)lights->next()){
+		for(light_s *s=(light_s*)light_list->reset(); light_list->isValid(); s=(light_s*)light_list->next()){
 			pwmBufferLight(s);
 		}
 		pwmPrepareFinish();
