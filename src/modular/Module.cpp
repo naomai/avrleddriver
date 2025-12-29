@@ -16,12 +16,7 @@ Module::Module(){
 }
 
 void Module::raiseEvent(uint8_t type, uint8_t lbyte, uint8_t hbyte, bool loopback){
-	eventDescriptor ev;
-	ev.source = !loopback ? this->moduleId : 0;
-	ev.type = type;
-	ev.lbyte = lbyte;
-	ev.hbyte = hbyte;
-	this->eq->pushEvent(ev);
+	this->eq->pushEvent(type, lbyte, hbyte,  !loopback ? this->moduleId : 0);
 }
 
 void Module::lateInit(){

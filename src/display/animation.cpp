@@ -85,11 +85,7 @@ void animStart(animation *a){
 		lights->getLightById(a->stripId)->special |= P_SPECIAL_ANIMATED;
 		a->progress=1;
 		//_logf("Started strip %i", a->stripId);
-		eventDescriptor ev;
-		ev.type = EVENT_ANIM_START;
-		ev.lbyte = a->tag;
-		ev.hbyte = a->stripId;
-		dispatcher->queue->pushEvent(ev);
+		dispatcher->event_queue->pushEvent(EVENT_ANIM_START, a->tag, a->stripId);
 	}
 }
 

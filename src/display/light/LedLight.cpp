@@ -44,11 +44,7 @@ void LedLight::setColor(colorRaw color, lightColorType which, colorSpace space, 
 	}
 	
 	if(notify){
-		eventDescriptor ev;
-		ev.type = EVENT_COLOR_CHANGE;
-		ev.lbyte = this->myId;
-		ev.hbyte = which;
-		dispatcher->queue->pushEvent(ev);
+		dispatcher->event_queue->pushEvent(EVENT_COLOR_CHANGE, this->myId, which);
 	}
 }
 

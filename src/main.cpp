@@ -100,12 +100,7 @@ int main(){
 	
 	#ifdef AUTO_POWERUP
 	{
-		eventDescriptor powerUpEvent;
-		powerUpEvent.type = EVENT_POWERSTATE;
-		powerUpEvent.lbyte = 255;
-		powerUpEvent.hbyte = PS_ON;
-		powerUpEvent.source = 0;
-		dispatcher->queue->pushEvent(powerUpEvent);
+		dispatcher->event_queue->pushEvent(EVENT_POWERSTATE, 255, PS_ON, 0);
 	}
 	#else
 		pwr->requestDeepSleep();
@@ -148,12 +143,7 @@ ISR(TIMER0_OVF_vect){
 
 
 void updateFrame(){
-	eventDescriptor newFrameEvent;
-	newFrameEvent.type = EVENT_FRAME;
-	newFrameEvent.hbyte = frameId >> 8;
-	newFrameEvent.lbyte = frameId & 0xFF;
-	dispatcher->queue->pushEvent(newFrameEvent);
-
+	dispatcher->event_queue->pushEvent(EVENT_FRAME, frameId >> 8, frameId & 0xFF);
 	animAdvanceAll();
 	
 	frameId++;

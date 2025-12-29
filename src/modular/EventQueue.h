@@ -13,6 +13,7 @@
 #include <stdbool.h>
 
 
+
 typedef struct{
 	uint8_t source;
 	uint8_t type;
@@ -20,23 +21,25 @@ typedef struct{
 	uint8_t hbyte;
 } eventDescriptor;
 
-#define EVENT_QUEUE_SIZE 16
+#ifdef __cplusplus
+
+#define EVENT_QUEUE_SIZE 32
 
 class EventQueue{
-	friend class Dispatcher;
 	protected:
 	eventDescriptor queue[EVENT_QUEUE_SIZE];
 	uint8_t offsetOut, offsetIn;
 	
-	eventDescriptor popEvent();
-	bool isEmpty();
-
 	public:
 	EventQueue();
-	void pushEvent(eventDescriptor ev);
+	void pushEvent(uint8_t type,uint8_t lbyte,uint8_t hbyte,uint8_t source=0);
+	void pushEvent(eventDescriptor *ev);
+	eventDescriptor* popEvent();
+	bool isEmpty();
 	void clear();
 	
 };
 
+#endif
 
 #endif /* EVENTQUEUE_H_ */
