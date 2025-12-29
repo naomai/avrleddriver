@@ -7,3 +7,11 @@
 *.srec
 Debug/
 .vs/
+.pio
+.pioenvs
+.piolibdeps
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+!*.code-workspace
