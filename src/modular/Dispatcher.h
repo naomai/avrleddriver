@@ -12,7 +12,7 @@
 
 #include "Module.h"
 
-#define DISPATCHER_MAX_MODULES 6
+#define DISPATCHER_MAX_MODULES 9
 
 typedef struct{
 	uint8_t counter;
@@ -24,7 +24,7 @@ class Dispatcher{
 	dispatcherModuleDescriptor modules[DISPATCHER_MAX_MODULES];
 	void dispatchEvent(eventDescriptor *ed);
 	public:
-	EventQueue *queue;
+	EventQueue *event_queue;
 	Dispatcher();
 	~Dispatcher();
 	void lateInitAll();

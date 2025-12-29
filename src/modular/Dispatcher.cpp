@@ -10,7 +10,7 @@
 #include "Dispatcher.h"
 
 Dispatcher::Dispatcher(){
-	queue = new EventQueue;
+	event_queue = new EventQueue;
 }
 Dispatcher::~Dispatcher(){
 	dispatcherModuleDescriptor *md;
@@ -19,7 +19,7 @@ Dispatcher::~Dispatcher(){
 		if(md->module == NULL) continue;
 		md->module->eq = NULL;
 	}
-	delete queue;
+	delete event_queue;
 }
 void Dispatcher::lateInitAll(){
 	dispatcherModuleDescriptor *md;
@@ -37,10 +37,10 @@ void Dispatcher::lateInitAll(){
 
 
 void Dispatcher::tick(){
-	eventDescriptor currentEvent;
-	while(!queue->isEmpty()){
-		currentEvent = queue->popEvent();
-		this->dispatchEvent(&currentEvent);
+	eventDescriptor *currentEvent;
+	while(!event_queue->isEmpty()){
+		currentEvent = event_queue->popEvent();
+		this->dispatchEvent(currentEvent);
 	}
 	
 	dispatcherModuleDescriptor *md;
@@ -74,7 +74,7 @@ void Dispatcher::registerModule(Module * m){
 		if(md->module == NULL){
 			md->counter = 0;
 			md->module = m;
-			m->eq = queue;
+			m->eq = event_queue;
 			return;
 		}
 	}
