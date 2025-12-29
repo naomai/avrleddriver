@@ -15,23 +15,22 @@
 
 class ColorMapper {
 	protected:
-	lightCalibration calibration;
+	uint8_t calibrationIdx;
 	int16_t attenuationInverse; // 255/min(calibR,G,B,W1,W2)
 	public:
 	virtual colorRaw fromRGB(colorRaw rgb);
-	virtual colorRaw toRGB(colorRaw localColor);
+	virtual void toRGB(colorRaw *localColor);
 	void applyCalibration(colorRaw *rgb);
-	void setCalibration(uint8_t calIdx);
-	virtual void setCalibration(lightCalibration cal);
-	static ColorMapper* createMapper(lightConfig *cfg);
-	static lightCalibration getCalibrationPreset(uint8_t calIdx);
+	virtual void setCalibration(uint8_t calIdx);
+	static ColorMapper* createMapper(entityConfig *cfg);
+	static void getCalibrationPreset(uint8_t calIdx, lightCalibration *cal);
 };
 
 class ColorMapperRaw: public ColorMapper{
 	public:
 	ColorMapperRaw();
 	colorRaw fromRGB(colorRaw rgb);
-	colorRaw toRGB(colorRaw localColor);
+	void toRGB(colorRaw *localColor);
 };
 
 class ColorMapperMono: public ColorMapper{
@@ -39,8 +38,8 @@ class ColorMapperMono: public ColorMapper{
 	ColorMapperMono();
 	colorRaw filterMono;
 	colorRaw fromRGB(colorRaw rgb);
-	colorRaw toRGB(colorRaw localColor);
-	void setCalibration(lightCalibration cal);
+	void toRGB(colorRaw *localColor);
+	void setCalibration(uint8_t calIdx);
 };
 
 class ColorMapperCCT: public ColorMapper{
@@ -48,8 +47,8 @@ class ColorMapperCCT: public ColorMapper{
 	ColorMapperCCT();
 	colorRaw filterCold, filterWarm;
 	colorRaw fromRGB(colorRaw rgb);
-	colorRaw toRGB(colorRaw localColor);
-	void setCalibration(lightCalibration cal);
+	void toRGB(colorRaw *localColor);
+	void setCalibration(uint8_t calIdx);
 };
 
 

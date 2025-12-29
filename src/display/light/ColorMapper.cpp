@@ -10,16 +10,14 @@
 #pragma GCC optimize("O0")
 static uint8_t clampUByte(int16_t val);
 static int16_t calculateIntensity(uint8_t val, uint8_t calibrationFactor, int16_t attenuationInv);
-static colorRaw colorNormalize(colorRaw16 color);
+static colorRaw colorNormalize(colorRaw16 *color);
 
 extern const lightCalibration PROGMEM calibrationTable[];
 
 void ColorMapper::setCalibration(uint8_t calIdx){
-	this->setCalibration(ColorMapper::getCalibrationPreset(calIdx));
-}
-
-void ColorMapper::setCalibration(lightCalibration cal){
-	this->calibration = cal;
+	lightCalibration cal;
+	ColorMapper::getCalibrationPreset(calIdx, &cal);
+	calibrationIdx = calIdx;
 	int16_t minPower = 255;
 	if(cal.dr && cal.dr < minPower) minPower = cal.dr;
 	if(cal.dg && cal.dg < minPower) minPower = cal.dg;
@@ -31,16 +29,20 @@ void ColorMapper::setCalibration(lightCalibration cal){
 
 void ColorMapper::applyCalibration(colorRaw *rgb){
 	colorRaw16 calcColor;
-	calcColor.r = calculateIntensity(rgb->rgb.r, this->calibration.dr, attenuationInverse);
-	calcColor.g = calculateIntensity(rgb->rgb.g, this->calibration.dg, attenuationInverse);
-	calcColor.b = calculateIntensity(rgb->rgb.b, this->calibration.db, attenuationInverse);
-	calcColor.cold = calculateIntensity(rgb->cct.cold, this->calibration.dc1, attenuationInverse);
-	calcColor.warm = calculateIntensity(rgb->cct.warm, this->calibration.dc2, attenuationInverse);
-	*rgb = colorNormalize(calcColor);
+	
+	lightCalibration cal;
+	ColorMapper::getCalibrationPreset(calibrationIdx, &cal);
+	
+	calcColor.r = calculateIntensity(rgb->rgb.r, cal.dr, attenuationInverse);
+	calcColor.g = calculateIntensity(rgb->rgb.g, cal.dg, attenuationInverse);
+	calcColor.b = calculateIntensity(rgb->rgb.b, cal.db, attenuationInverse);
+	calcColor.cold = calculateIntensity(rgb->cct.cold, cal.dc1, attenuationInverse);
+	calcColor.warm = calculateIntensity(rgb->cct.warm, cal.dc2, attenuationInverse);
+	*rgb = colorNormalize(&calcColor);
 
 }
 
-ColorMapper* ColorMapper::createMapper(lightConfig *cfg){
+ColorMapper* ColorMapper::createMapper(entityConfig *cfg){
 	ColorMapper *m;
 	if((cfg->type & LIGHT_CCT) == LIGHT_CCT){
 		m = new ColorMapperCCT;
@@ -57,14 +59,11 @@ colorRaw ColorMapper::fromRGB(colorRaw rgb){
 	return rgb;
 }
 
-colorRaw ColorMapper::toRGB(colorRaw localColor){
-	return localColor;
+void ColorMapper::toRGB(colorRaw *localColor){
 }
 
-lightCalibration ColorMapper::getCalibrationPreset(uint8_t calIdx){
-	lightCalibration cal;
-	memcpy_P(&cal, &calibrationTable[calIdx], sizeof(lightCalibration));
-	return cal;
+void ColorMapper::getCalibrationPreset(uint8_t calIdx, lightCalibration *cal){
+	memcpy_P(cal, &calibrationTable[calIdx], sizeof(lightCalibration));
 }
 
 /* ColorMapperRaw */
@@ -78,8 +77,7 @@ colorRaw ColorMapperRaw::fromRGB(colorRaw rgb){
 	return rgb;
 }
 
-colorRaw ColorMapperRaw::toRGB(colorRaw localColor){
-	return localColor;
+void ColorMapperRaw::toRGB(colorRaw *localColor){
 }
 
 /* ColorMapperMono */
@@ -88,8 +86,10 @@ ColorMapperMono::ColorMapperMono(){
 	
 }
 
-void ColorMapperMono::setCalibration(lightCalibration cal){
-	ColorMapper::setCalibration(cal);
+void ColorMapperMono::setCalibration(uint8_t calIdx){
+	ColorMapper::setCalibration(calIdx);
+	lightCalibration cal;
+	ColorMapper::getCalibrationPreset(calIdx, &cal);
 	this->filterMono.rgb = cal.add1;
 }
 
@@ -105,17 +105,14 @@ colorRaw ColorMapperMono::fromRGB(colorRaw rgb){
 	return rgb;
 }
 
-colorRaw ColorMapperMono::toRGB(colorRaw localColor){
+void ColorMapperMono::toRGB(colorRaw *localColor){
 	colorRaw16 calcColor;
-	colorRaw result;
-	calcColor.r = (uint16_t)localColor.rgb.r + ((this->filterMono.rgb.r * (uint16_t)localColor.white.w)>>8);
-	calcColor.g = (uint16_t)localColor.rgb.g + ((this->filterMono.rgb.g * (uint16_t)localColor.white.w)>>8);
-	calcColor.b = (uint16_t)localColor.rgb.b + ((this->filterMono.rgb.b * (uint16_t)localColor.white.w)>>8);
+	calcColor.r = (uint16_t)localColor->rgb.r + ((this->filterMono.rgb.r * (uint16_t)localColor->white.w)>>8);
+	calcColor.g = (uint16_t)localColor->rgb.g + ((this->filterMono.rgb.g * (uint16_t)localColor->white.w)>>8);
+	calcColor.b = (uint16_t)localColor->rgb.b + ((this->filterMono.rgb.b * (uint16_t)localColor->white.w)>>8);
 	calcColor.cold = 0;
 	calcColor.warm = 0;	
-	result = colorNormalize(calcColor);
-	
-	return result;
+	*localColor = colorNormalize(&calcColor);
 }
 
 /* ColorMapperCCT */ 
@@ -124,8 +121,10 @@ ColorMapperCCT::ColorMapperCCT(){
 	
 }
 
-void ColorMapperCCT::setCalibration(lightCalibration cal){
-	ColorMapper::setCalibration(cal);
+void ColorMapperCCT::setCalibration(uint8_t calIdx){
+	ColorMapper::setCalibration(calIdx);
+	lightCalibration cal;
+	ColorMapper::getCalibrationPreset(calIdx, &cal);
 	this->filterCold.rgb = cal.add1;
 	this->filterWarm.rgb = cal.add2;
 }
@@ -149,21 +148,21 @@ colorRaw ColorMapperCCT::fromRGB(colorRaw rgb){
 	return rgb;
 }
 
-colorRaw ColorMapperCCT::toRGB(colorRaw localColor){
+void ColorMapperCCT::toRGB(colorRaw *localColor){
 	colorRaw16 calcColor;
 	colorRaw result;
-	calcColor.r = (uint16_t)localColor.rgb.r + ((this->filterCold.rgb.r * (uint16_t)localColor.cct.cold)>>8);
-	calcColor.g = (uint16_t)localColor.rgb.g + ((this->filterCold.rgb.g * (uint16_t)localColor.cct.cold)>>8);
-	calcColor.b = (uint16_t)localColor.rgb.b + ((this->filterCold.rgb.b * (uint16_t)localColor.cct.cold)>>8);
+	calcColor.r = (uint16_t)localColor->rgb.r + ((this->filterCold.rgb.r * (uint16_t)localColor->cct.cold)>>8);
+	calcColor.g = (uint16_t)localColor->rgb.g + ((this->filterCold.rgb.g * (uint16_t)localColor->cct.cold)>>8);
+	calcColor.b = (uint16_t)localColor->rgb.b + ((this->filterCold.rgb.b * (uint16_t)localColor->cct.cold)>>8);
 	
-	calcColor.r = (uint16_t)localColor.rgb.r + ((this->filterWarm.rgb.r * (uint16_t)localColor.cct.warm)>>8);
-	calcColor.g = (uint16_t)localColor.rgb.g + ((this->filterWarm.rgb.g * (uint16_t)localColor.cct.warm)>>8);
-	calcColor.b = (uint16_t)localColor.rgb.b + ((this->filterWarm.rgb.b * (uint16_t)localColor.cct.warm)>>8);
+	calcColor.r = (uint16_t)localColor->rgb.r + ((this->filterWarm.rgb.r * (uint16_t)localColor->cct.warm)>>8);
+	calcColor.g = (uint16_t)localColor->rgb.g + ((this->filterWarm.rgb.g * (uint16_t)localColor->cct.warm)>>8);
+	calcColor.b = (uint16_t)localColor->rgb.b + ((this->filterWarm.rgb.b * (uint16_t)localColor->cct.warm)>>8);
 	
 	calcColor.cold = 0;
 	calcColor.warm = 0;
-	result = colorNormalize(calcColor);
-	return result;
+	
+	*localColor = colorNormalize(&calcColor);
 }
 
 uint8_t clampUByte(int16_t val){
@@ -182,27 +181,27 @@ int16_t calculateIntensity(uint8_t val, uint8_t calibrationFactor, int16_t atten
 	return out;
 }
 
-colorRaw colorNormalize(colorRaw16 color){
+colorRaw colorNormalize(colorRaw16 *color){
 	uint8_t attenuate;
 	colorRaw newColor;
-	int16_t max = color.r;
-	if(color.g>max) max = color.g;
-	if(color.b>max) max = color.b;
-	if(color.cold>max) max = color.cold;
-	if(color.warm>max) max = color.warm;
+	int16_t max = color->r;
+	if(color->g>max) max = color->g;
+	if(color->b>max) max = color->b;
+	if(color->cold>max) max = color->cold;
+	if(color->warm>max) max = color->warm;
 	if(max > 255){
 		attenuate = 65535 / max;
-		newColor.rgb.r = (color.r * attenuate)>>8;
-		newColor.rgb.g = (color.g * attenuate)>>8;
-		newColor.rgb.b = (color.b * attenuate)>>8;
-		newColor.cct.cold = (color.cold * attenuate)>>8;
-		newColor.cct.warm = (color.warm * attenuate)>>8;
+		newColor.rgb.r = (color->r * attenuate)>>8;
+		newColor.rgb.g = (color->g * attenuate)>>8;
+		newColor.rgb.b = (color->b * attenuate)>>8;
+		newColor.cct.cold = (color->cold * attenuate)>>8;
+		newColor.cct.warm = (color->warm * attenuate)>>8;
 	}else{
-		newColor.rgb.r = color.r;
-		newColor.rgb.g = color.g;
-		newColor.rgb.b = color.b;
-		newColor.cct.cold = color.cold;
-		newColor.cct.warm = color.warm;
+		newColor.rgb.r = color->r;
+		newColor.rgb.g = color->g;
+		newColor.rgb.b = color->b;
+		newColor.cct.cold = color->cold;
+		newColor.cct.warm = color->warm;
 	}
 	return newColor;
 }

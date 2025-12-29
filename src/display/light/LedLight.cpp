@@ -58,7 +58,7 @@ colorRaw LedLight::getColor(lightColorType which, colorSpace space){
 		result = this->memColor;
 	}
 	if(space==COLORSPACE_SRGB){
-		result = this->mapper->toRGB(result);
+		this->mapper->toRGB(&result);
 	}
 	return result;
 }
